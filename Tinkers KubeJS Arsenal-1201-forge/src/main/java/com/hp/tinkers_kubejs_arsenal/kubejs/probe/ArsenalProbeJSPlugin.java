@@ -9,6 +9,7 @@ import com.probejs.jdoc.property.PropertyType;
 import com.probejs.features.plugin.DocGenerationEventJS;
 import com.probejs.features.plugin.ProbeJSEvents;
 import dev.latvian.mods.kubejs.KubeJSPlugin;
+import slimeknights.mantle.data.registry.IdAwareComponentRegistry;
 import dev.latvian.mods.kubejs.script.ScriptType;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,8 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
         ProbeJSEvents.DOC_GEN.listenJava(ScriptType.SERVER, null, event -> {
             DocGenerationEventJS doc = (DocGenerationEventJS) event;
             doc.specialType(TinkerTypes.MATERIAL_NAME, literals(MaterialRegistry.getMaterials().stream().map(material -> material.getIdentifier().toString()), true));
+            doc.specialType(TinkerTypes.MATERIAL_STAT_NAME, literals(MaterialRegistry.getInstance().getStatTypeLoader() instanceof IdAwareComponentRegistry<?> registry
+                ? registry.getKeys().stream().map(Object::toString) : Stream.empty(), false));
             doc.specialType(TinkerTypes.MODIFIER_NAME, literals(ModifierManager.INSTANCE.getAllLocations().map(Object::toString), true));
             doc.specialType(TinkerTypes.PATTERN_NAME, literals(patterns(), true));
             doc.specialType(TinkerTypes.SLOT_NAME, literals(SlotType.getAllSlotTypes().stream().map(SlotType::getName), false));

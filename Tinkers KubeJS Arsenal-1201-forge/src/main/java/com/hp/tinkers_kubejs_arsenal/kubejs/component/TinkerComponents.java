@@ -85,7 +85,7 @@ public final class TinkerComponents {
     public static final RecipeComponent<AlloyRecipe.AlloyIngredient> ALLOY_INGREDIENT = new AlloyIngredientComponent();
     public static final RecipeComponent<MaterialVariantId> MATERIAL_VARIANT = typedId("material_variant", MaterialVariantId.class, MaterialVariantId.LOADABLE, TinkerTypes.MATERIAL);
     public static final RecipeComponent<MaterialStatsId> MATERIAL_STATS = typedId("material_stats", MaterialStatsId.class,
-        new ParserLoadable<>(MaterialStatsId::tryParse, MaterialStatsId::toString), TypeDescJS.STRING);
+        new ParserLoadable<>(MaterialStatsId::tryParse, MaterialStatsId::toString), TinkerTypes.MATERIAL_STAT);
     public static final RecipeComponent<ModifierId> MODIFIER = typedId("modifier", ModifierId.class,
         new ParserLoadable<>(ModifierId::tryParse, ModifierId::toString), TinkerTypes.MODIFIER);
     public static final RecipeComponent<Pattern> PATTERN = typedId("pattern", Pattern.class,

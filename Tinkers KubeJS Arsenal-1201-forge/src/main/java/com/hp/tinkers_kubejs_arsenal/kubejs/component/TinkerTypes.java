@@ -6,6 +6,7 @@ import dev.latvian.mods.kubejs.typings.desc.TypeDescJS;
 public final class TinkerTypes {
     public static final String MATERIAL_NAME = "TinkerMaterial";
     public static final String MODIFIER_NAME = "TinkerModifier";
+    public static final String MATERIAL_STAT_NAME = "TinkerMaterialStat";
     public static final String PATTERN_NAME = "TinkerPattern";
     public static final String SLOT_NAME = "TinkerSlot";
     public static final String TOOL_PART_NAME = "TinkerToolPart";
@@ -14,6 +15,7 @@ public final class TinkerTypes {
 
     public static final TypeDescJS MATERIAL = special(MATERIAL_NAME);
     public static final TypeDescJS MODIFIER = special(MODIFIER_NAME);
+    public static final TypeDescJS MATERIAL_STAT = special(MATERIAL_STAT_NAME);
     public static final TypeDescJS PATTERN = special(PATTERN_NAME);
     public static final TypeDescJS TOOL_PART = special(TOOL_PART_NAME);
     public static final TypeDescJS MATERIAL_ITEM = special(MATERIAL_ITEM_NAME);
