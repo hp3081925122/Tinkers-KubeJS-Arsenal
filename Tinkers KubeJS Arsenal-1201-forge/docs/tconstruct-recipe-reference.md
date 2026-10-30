@@ -983,7 +983,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 | pattern | 是 | - | Pattern（ID）|
 | pattern_item | 否 | DEFAULT_PATTERNS | Ingredient（DISALLOW_EMPTY）|
 | cost | 否 | 0 | int ≥0（validate：material 非空时 cost 必须 >0）|
-| result | 是 | - | ItemStack（REQUIRED_STACK，支持 count）|
+| result | 是 | - | ItemOutput（REQUIRED_STACK，支持 count/tag）|
 
 示例：`./smeltery/casts/red_sand/builder_block/adze_head.json`
 ```json
@@ -1029,7 +1029,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 |---|---|---|---|
 | tool | 是 | - | Ingredient（DISALLOW_EMPTY）|
 | pattern | 是 | - | Ingredient（DISALLOW_EMPTY）|
-| results | 是 | - | Map<物品 ID 字符串, ItemStack（REQUIRED_STACK，支持 count）>|
+| results | 是 | - | Map<Pattern ID（`Pattern.PARSER.mapWithValues`）, ItemOutput（REQUIRED_STACK，支持 count）>|
 
 示例：`./tables/recycling/bow.json`
 ```json
@@ -1417,7 +1417,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 | tools | 否 | SizedIngredient.of(tconstruct:modifiable) | SizedIngredient |
 | inputs | 是 | - | SizedIngredient 数组（至少 1）|
 | leftovers | 否 | [] | ItemStack 数组（REQUIRED_STACK_NBT）|
-| modifier_predicate | 否 | false（PredicateRegistry 布尔常量）| ModifierPredicate |
+| modifier_predicate | 否 | `ModifierPredicate.ANY`（任意词条；源码中的 `false` 是“不写出默认值”参数）| ModifierPredicate |
 
 示例：`./tools/modifiers/worktable/remove_modifier_sponge.json`
 ```json
@@ -1494,7 +1494,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 | data_key | 是 | - | ResourceLocation |
 | inputs | 是 | - | SizedIngredient 数组（至少 1）|
 | tools | 否 | DEFAULT_TOOLS（tconstruct:modifiable）| Ingredient（写入 JSON）|
-| modifier_predicate | 否 | false | ModifierPredicate |
+| modifier_predicate | 否 | `ModifierPredicate.ANY` | ModifierPredicate |
 | add_to_set | 是 | - | boolean |
 | allow_traits | 否 | false | boolean |
 
@@ -1533,7 +1533,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 | inputs | 是 | - | SizedIngredient 数组（至少 1）|
 | match_book | 是 | - | boolean |
 | return_unenchanted | 是 | - | boolean |
-| modifier_predicate | 否 | false | ModifierPredicate |
+| modifier_predicate | 否 | `ModifierPredicate.ANY` | ModifierPredicate |
 
 示例：`./tools/modifiers/worktable/enchantment_converting/ability_book.json`
 ```json
@@ -1582,7 +1582,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 | 字段 | 必填 | 默认 | 类型 |
 |---|---|---|---|
 | entity | 是 | - | EntityIngredient |
-| result | 是 | - | ItemStack（REQUIRED_STACK，支持 count）|
+| result | 是 | - | ItemOutput（REQUIRED_STACK，支持 count/tag）|
 | per_level_chance | 否 | 0.05 | float，0–1 |
 | looting_bonus | 否 | 0.01 | float，0–1 |
 
@@ -1603,8 +1603,8 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 | 字段 | 必填 | 默认 | 类型 |
 |---|---|---|---|
 | entity | 是 | - | EntityIngredient |
-| adult_result | 是 | - | ItemStack（REQUIRED_STACK）|
-| child_result | 否 | EMPTY | ItemStack（OPTIONAL_STACK）|
+| adult_result | 是 | - | ItemOutput（REQUIRED_STACK）|
+| child_result | 否 | EMPTY | ItemOutput（OPTIONAL_STACK）|
 | per_level_chance | 否 | 0.05 | float 0–1 |
 | looting_bonus | 否 | 0.01 | float 0–1 |
 
@@ -1779,5 +1779,7 @@ AlloyIngredient 元素：直接写 FluidIngredient 字段（amount + fluid/tag�
 ### 5. 结论与未核实项
 - 序列化器总数：**76**（TinkerSmeltery 32 + TinkerTables 16 + TinkerModifiers 28）。有 JSON 示例 64 个，无示例 12 个。
 - 主对话脚本复核（2026年10月30日）：molding、modifier、modifier_repair 的 LOADER 不含 `group`，已从表中删除；部件替换浇铸小节为补充内容。
+- 第二轮复核还修正：`part_builder_recycling.results` 键为 Pattern ID；`item_part_builder`、`severing`、`ageable_severing` 的结果类型为 ItemOutput。
+- 注册表类的 `LOADER.defaultField(key, 布尔, getter)` 中布尔值是 serializeDefault，默认值是注册表默认实例（`modifier_predicate` 默认 ANY，已修正，2026年10月30日第二轮复核）。
 - 两参 `defaultField(key, getter)`：`level` 默认 1–32767，`allowed_materials` 默认 ANY（已复核）。
 - deprecated：modifier_material_repair、crafting_modifier_material_repair；cast_purpose 的 MAYBE_MATERIAL 已标注 deprecated。
