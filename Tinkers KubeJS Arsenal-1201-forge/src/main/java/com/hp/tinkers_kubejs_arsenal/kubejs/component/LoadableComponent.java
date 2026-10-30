@@ -2,8 +2,11 @@ package com.hp.tinkers_kubejs_arsenal.kubejs.component;
 
 import com.google.gson.JsonElement;
 import dev.latvian.mods.kubejs.recipe.ItemMatch;
+import dev.latvian.mods.kubejs.item.OutputItem;
+import dev.latvian.mods.kubejs.recipe.RecipeExceptionJS;
 import dev.latvian.mods.kubejs.recipe.RecipeJS;
 import dev.latvian.mods.kubejs.recipe.RecipeKey;
+import dev.latvian.mods.kubejs.recipe.OutputReplacement;
 import dev.latvian.mods.kubejs.recipe.ReplacementMatch;
 import dev.latvian.mods.kubejs.recipe.component.ComponentRole;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponent;
@@ -25,9 +28,16 @@ public final class LoadableComponent<T> implements RecipeComponent<T> {
     private final Function<JsonElement, T> converter;
     private final Function<T, String> emptyCheck;
     private final Function<T, ItemStack> outputStack;
+    private final Function<ItemStack, T> outputValue;
 
     public LoadableComponent(String type, Class<?> valueClass, Loadable<T> loadable, ComponentRole role, Function<DescriptionContext, TypeDescJS> description,
                              Function<JsonElement, T> converter, Function<T, String> emptyCheck, Function<T, ItemStack> outputStack) {
+        this(type, valueClass, loadable, role, description, converter, emptyCheck, outputStack, null);
+    }
+
+    public LoadableComponent(String type, Class<?> valueClass, Loadable<T> loadable, ComponentRole role, Function<DescriptionContext, TypeDescJS> description,
+                             Function<JsonElement, T> converter, Function<T, String> emptyCheck, Function<T, ItemStack> outputStack,
+                             Function<ItemStack, T> outputValue) {
         this.type = type;
         this.valueClass = valueClass;
         this.loadable = loadable;
@@ -36,6 +46,7 @@ public final class LoadableComponent<T> implements RecipeComponent<T> {
         this.converter = converter;
         this.emptyCheck = emptyCheck;
         this.outputStack = outputStack;
+        this.outputValue = outputValue;
     }
 
     @Override
@@ -89,6 +100,21 @@ public final class LoadableComponent<T> implements RecipeComponent<T> {
         }
         ItemStack stack = this.outputStack.apply(value);
         return stack != null && !stack.isEmpty() && itemMatch.contains(stack);
+    }
+
+    @Override
+    public T replaceOutput(RecipeJS recipe, T original, ReplacementMatch match, OutputReplacement with) {
+        if (this.outputValue == null || !(with instanceof OutputItem item) || !this.isOutput(recipe, original, match)) {
+            return original;
+        }
+        ItemStack replacement = item.item.copy();
+        ItemStack originalStack = this.outputStack.apply(original);
+        replacement.setCount(Math.max(1, originalStack.getCount()));
+        T value = this.outputValue.apply(replacement);
+        if (value == null) {
+            throw new RecipeExceptionJS("Recipe " + recipe.id + " cannot replace " + this.type + " output with " + replacement.getItem() + "; the replacement item has the wrong type");
+        }
+        return value;
     }
 
     @Override

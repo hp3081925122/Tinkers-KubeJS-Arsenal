@@ -40,7 +40,41 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
             .register("material_melting", TinkerRecipeSchemas.MATERIAL_MELTING)
             .register("melting_fuel", TinkerRecipeSchemas.MELTING_FUEL)
             .register("entity_melting", TinkerRecipeSchemas.ENTITY_MELTING)
-            .register("alloy", TinkerRecipeSchemas.ALLOY);
+            .register("alloy", TinkerRecipeSchemas.ALLOY)
+            .register("material", TinkerRecipeSchemas.MATERIAL)
+            .register("part_builder", TinkerRecipeSchemas.PART_BUILDER)
+            .register("item_part_builder", TinkerRecipeSchemas.ITEM_PART_BUILDER)
+            .register("tool_building", TinkerRecipeSchemas.TOOL_BUILDING)
+            .register("part_builder_recycling", TinkerRecipeSchemas.PART_BUILDER_RECYCLING)
+            .register("part_builder_tool_recycling", TinkerRecipeSchemas.PART_BUILDER_TOOL_RECYCLING)
+            .register("modifier", TinkerRecipeSchemas.MODIFIER)
+            .register("incremental_modifier", TinkerRecipeSchemas.INCREMENTAL_MODIFIER)
+            .register("swappable_modifier", TinkerRecipeSchemas.SWAPPABLE_MODIFIER)
+            .register("multilevel_modifier", TinkerRecipeSchemas.MULTILEVEL_MODIFIER)
+            .register("multilevel_incremental_modifier", TinkerRecipeSchemas.MULTILEVEL_INCREMENTAL_MODIFIER)
+            .register("overslime_modifier", TinkerRecipeSchemas.OVERSLIME_MODIFIER)
+            .register("crafting_overslime_modifier", TinkerRecipeSchemas.CRAFTING_OVERSLIME_MODIFIER)
+            .register("modifier_salvage", TinkerRecipeSchemas.MODIFIER_SALVAGE)
+            .register("modifier_repair", TinkerRecipeSchemas.MODIFIER_REPAIR)
+            .register("crafting_modifier_repair", TinkerRecipeSchemas.CRAFTING_MODIFIER_REPAIR)
+            .register("remove_modifier", TinkerRecipeSchemas.REMOVE_MODIFIER)
+            .register("extract_modifier", TinkerRecipeSchemas.EXTRACT_MODIFIER)
+            .register("modifier_sorting", TinkerRecipeSchemas.MODIFIER_SORTING)
+            .register("modifier_set_worktable", TinkerRecipeSchemas.MODIFIER_SET_WORKTABLE)
+            .register("enchantment_converting", TinkerRecipeSchemas.ENCHANTMENT_CONVERTING)
+            .register("toggle_interaction", TinkerRecipeSchemas.TOGGLE_INTERACTION)
+            .register("tinker_station_damaging", TinkerRecipeSchemas.TINKER_STATION_DAMAGING)
+            .register("tinker_station_part_swapping", TinkerRecipeSchemas.TINKER_STATION_PART_SWAPPING)
+            .register("tool_material_swapping", TinkerRecipeSchemas.TOOL_MATERIAL_SWAPPING)
+            .register("fixed_material_swapping", TinkerRecipeSchemas.FIXED_MATERIAL_SWAPPING)
+            .register("part_swapping_override", TinkerRecipeSchemas.PART_SWAPPING_OVERRIDE)
+            .register("tipped_tool_transform", TinkerRecipeSchemas.TIPPED_TOOL_TRANSFORM)
+            .register("severing", TinkerRecipeSchemas.SEVERING)
+            .register("ageable_severing", TinkerRecipeSchemas.AGEABLE_SEVERING)
+            .register("player_beheading", TinkerRecipeSchemas.PLAYER_BEHEADING)
+            .register("snow_golem_beheading", TinkerRecipeSchemas.SNOW_GOLEM_BEHEADING)
+            .register("mooshroom_demushrooming", TinkerRecipeSchemas.MOOSHROOM_DEMUSHROOMING)
+            .register("sheep_shearing", TinkerRecipeSchemas.SHEEP_SHEARING);
     }
 
     @Override
@@ -49,3 +83,5 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
         event.add("TinkerRecipes", TinkerRecipes.class);
     }
 }
+
+

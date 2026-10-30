@@ -49,7 +49,7 @@
 | `part_builder_recycling` | `PartBuilderRecycle` | `results` 是 **Pattern ID → ItemOutput(REQUIRED_STACK)** 的映射，见 5.3 |
 | `part_builder_tool_recycling` | `PartBuilderToolRecycle` | `tools` 是 SizedIngredient，默认 `#tconstruct:multipart_tool`；`parts` 是 IMaterialItem 列表 |
 
-### 第三期：工匠台、词条与斩首（30 个）
+### 第三期：工匠台、词条与斩首（28 个）
 
 | 分组 | ID |
 |---|---|

@@ -7,6 +7,7 @@ import com.google.gson.JsonPrimitive;
 import dev.latvian.mods.kubejs.core.IngredientKJS;
 import dev.latvian.mods.kubejs.fluid.FluidStackJS;
 import dev.latvian.mods.kubejs.item.InputItem;
+import dev.latvian.mods.kubejs.recipe.RecipeExceptionJS;
 import dev.latvian.mods.kubejs.item.OutputItem;
 import dev.latvian.mods.kubejs.recipe.InputReplacement;
 import dev.latvian.mods.kubejs.recipe.ItemMatch;
@@ -32,29 +33,45 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import slimeknights.mantle.data.loadable.Loadable;
 import slimeknights.mantle.data.loadable.Loadables;
+import slimeknights.mantle.data.loadable.array.IntArrayLoadable;
 import slimeknights.mantle.data.loadable.common.IngredientLoadable;
+import slimeknights.mantle.data.loadable.common.ItemStackLoadable;
+import slimeknights.mantle.data.loadable.primitive.FloatLoadable;
+import slimeknights.mantle.data.loadable.primitive.IntLoadable;
 import slimeknights.mantle.data.predicate.IJsonPredicate;
 import slimeknights.mantle.recipe.helper.FluidOutput;
 import slimeknights.mantle.recipe.helper.ItemOutput;
 import slimeknights.mantle.recipe.ingredient.EntityIngredient;
 import slimeknights.mantle.recipe.ingredient.FluidIngredient;
+import slimeknights.mantle.recipe.ingredient.SizedIngredient;
 import slimeknights.mantle.util.typed.TypedMap;
 import slimeknights.tconstruct.library.json.TinkerLoadables;
+import slimeknights.tconstruct.library.json.IntRange;
+import slimeknights.tconstruct.library.json.predicate.modifier.ModifierPredicate;
 import slimeknights.tconstruct.library.json.predicate.material.MaterialPredicate;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 import slimeknights.tconstruct.library.materials.stats.MaterialStatsId;
 import slimeknights.tconstruct.library.modifiers.ModifierId;
+import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.recipe.alloying.AlloyRecipe;
+import slimeknights.tconstruct.library.recipe.modifiers.adding.MultilevelModifierRecipe;
+import slimeknights.tconstruct.library.recipe.modifiers.adding.SwappableModifierRecipe;
 import slimeknights.tconstruct.library.recipe.casting.material.ToolCastingRecipe;
 import slimeknights.tconstruct.library.recipe.melting.IMeltingContainer;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 import slimeknights.tconstruct.library.tools.item.IModifiable;
+import slimeknights.tconstruct.library.tools.SlotType;
 import slimeknights.tconstruct.library.tools.part.IMaterialItem;
+import slimeknights.tconstruct.library.tools.part.IToolPart;
+import com.google.gson.JsonObject;
+import net.minecraft.resources.ResourceLocation;
 
 public final class TinkerComponents {
     public static final RecipeComponent<String> GROUP = StringComponent.ANY;
     public static final RecipeComponent<Ingredient> INGREDIENT_REQUIRED = new IngredientComponent(false);
     public static final RecipeComponent<Ingredient> INGREDIENT_OPTIONAL = new IngredientComponent(true);
+    public static final RecipeComponent<SizedIngredient> SIZED_INGREDIENT = new SizedIngredientComponent();
+    public static final RecipeComponent<ItemStack> ITEM_STACK_OUTPUT = new ItemStackOutputComponent();
     public static final RecipeComponent<FluidIngredient> FLUID_INGREDIENT = new FluidIngredientComponent();
     public static final RecipeComponent<FluidOutput> FLUID_OUTPUT_REQUIRED = new FluidOutputComponent(FluidOutput.Loadable.REQUIRED, "tinker_fluid_output");
     public static final RecipeComponent<FluidOutput> FLUID_OUTPUT_OPTIONAL = new FluidOutputComponent(FluidOutput.Loadable.OPTIONAL, "tinker_fluid_output_optional");
@@ -77,11 +94,11 @@ public final class TinkerComponents {
         MaterialPredicate.LOADER, ComponentRole.OTHER, ctx -> TypeDescJS.STRING.or(TypeDescJS.ANY_MAP), TinkerComponents::readMaterialPredicate,
         value -> "", null);
     public static final RecipeComponent<Item> ITEM = itemId("item", Item.class, Loadables.ITEM, ComponentRole.OTHER, null);
-    public static final RecipeComponent<Item> ITEM_RESULT = itemId("item_result", Item.class, Loadables.ITEM, ComponentRole.OUTPUT, ItemStack::new);
+    public static final RecipeComponent<Item> ITEM_RESULT = itemId("item_result", Item.class, Loadables.ITEM, ComponentRole.OUTPUT, ItemStack::new, stack -> stack.getItem());
     public static final RecipeComponent<IMaterialItem> MATERIAL_ITEM = itemId("material_item", IMaterialItem.class, TinkerLoadables.MATERIAL_ITEM,
-        ComponentRole.OUTPUT, item -> new ItemStack(item.asItem()));
+        ComponentRole.OUTPUT, item -> new ItemStack(item.asItem()), stack -> stack.getItem() instanceof IMaterialItem item ? item : null);
     public static final RecipeComponent<IModifiable> MODIFIABLE_ITEM = itemId("modifiable_item", IModifiable.class, TinkerLoadables.MODIFIABLE_ITEM,
-        ComponentRole.OUTPUT, item -> new ItemStack(item.asItem()));
+        ComponentRole.OUTPUT, item -> new ItemStack(item.asItem()), stack -> stack.getItem() instanceof IModifiable item ? item : null);
     public static final RecipeComponent<Integer> POSITIVE_INT = NumberComponent.INT.min(1);
     public static final RecipeComponent<Integer> NON_NEGATIVE_INT = NumberComponent.INT.min(0);
     public static final RecipeComponent<Boolean> BOOLEAN = BooleanComponent.BOOLEAN;
@@ -89,6 +106,33 @@ public final class TinkerComponents {
         TinkerLoadables.ORE_RATE_TYPE, ComponentRole.OTHER, ctx -> TypeDescJS.STRING, json -> TinkerLoadables.ORE_RATE_TYPE.convert(json, "rate"),
         value -> value == null ? "Ore rate can't be empty" : "", null);
     public static final RecipeComponent<ToolCastingRecipe.CastPurpose> CAST_PURPOSE = new EnumComponent<>(ToolCastingRecipe.CastPurpose.class);
+    public static final RecipeComponent<IntRange> LEVEL_RANGE = new LoadableComponent<>("level_range", IntRange.class,
+        ModifierEntry.VALID_LEVEL, ComponentRole.OTHER, ctx -> TypeDescJS.any(TypeDescJS.NUMBER, TypeDescJS.object()),
+        json -> ModifierEntry.VALID_LEVEL.convert(json, "level"), value -> value == null ? "Level range can't be empty" : "", null);
+    public static final RecipeComponent<SlotType.SlotCount> SLOT_COUNT = new LoadableComponent<>("slot_count", SlotType.SlotCount.class,
+        SlotType.SlotCount.LOADABLE, ComponentRole.OTHER, ctx -> TypeDescJS.object(),
+        json -> SlotType.SlotCount.LOADABLE.convert(json, "slots"), value -> value == null ? "Slot count can't be empty" : "", null);
+    public static final RecipeComponent<MultilevelModifierRecipe.LevelEntry> LEVEL_ENTRY = new LoadableComponent<>("level_entry", MultilevelModifierRecipe.LevelEntry.class,
+        MultilevelModifierRecipe.LevelEntry.LOADABLE, ComponentRole.OTHER, ctx -> TypeDescJS.object(),
+        json -> MultilevelModifierRecipe.LevelEntry.LOADABLE.convert(json, "level"), value -> value == null ? "Level entry can't be empty" : "", null);
+    public static final RecipeComponent<IJsonPredicate<ModifierId>> MODIFIER_PREDICATE = new LoadableComponent<>("modifier_predicate", IJsonPredicate.class,
+        ModifierPredicate.LOADER, ComponentRole.OTHER, ctx -> TypeDescJS.STRING.or(TypeDescJS.ANY_MAP),
+        json -> ModifierPredicate.LOADER.convert(json, "modifier_predicate"), value -> value == null ? "Modifier predicate can't be empty" : "", null);
+    public static final RecipeComponent<IToolPart> TOOL_PART = new LoadableComponent<>("tool_part", IToolPart.class,
+        TinkerLoadables.TOOL_PART_ITEM, ComponentRole.OTHER, ctx -> TypeDescJS.STRING,
+        json -> TinkerLoadables.TOOL_PART_ITEM.convert(json, "part"), value -> value == null ? "Tool part can't be empty" : "", null);
+    public static final RecipeComponent<int[]> INDEX_ARRAY = new LoadableComponent<>("index_array", int[].class,
+        new IntArrayLoadable(IntLoadable.FROM_ZERO, -1, 10), ComponentRole.OTHER, ctx -> TypeDescJS.any(TypeDescJS.NUMBER, TypeDescJS.NUMBER.asArray()),
+        json -> new IntArrayLoadable(IntLoadable.FROM_ZERO, -1, 10).convert(json, "index"), value -> value == null ? "Index can't be empty" : "", null);
+    public static final RecipeComponent<Float> PERCENT = new LoadableComponent<>("percent", Float.class,
+        FloatLoadable.PERCENT, ComponentRole.OTHER, ctx -> TypeDescJS.NUMBER,
+        json -> FloatLoadable.PERCENT.convert(json, "percent"), value -> value == null ? "Percent can't be empty" : "", null);
+    public static final RecipeComponent<SwappableModifierRecipe.VariantFormatter> VARIANT_FORMATTER = new LoadableComponent<>("variant_formatter", SwappableModifierRecipe.VariantFormatter.class,
+        SwappableModifierRecipe.VariantFormatter.LOADER, ComponentRole.OTHER, ctx -> TypeDescJS.STRING,
+        json -> SwappableModifierRecipe.VariantFormatter.LOADER.convert(json, "variant_formatter"), value -> value == null ? "Variant formatter can't be empty" : "", null);
+    public static final RecipeComponent<ResourceLocation> RESOURCE_LOCATION = new LoadableComponent<>("resource_location", ResourceLocation.class,
+        Loadables.RESOURCE_LOCATION, ComponentRole.OTHER, ctx -> TypeDescJS.STRING,
+        json -> Loadables.RESOURCE_LOCATION.convert(json, "resource_location"), value -> value == null ? "Resource location can't be empty" : "", null);
 
     private TinkerComponents() {
     }
@@ -162,8 +206,13 @@ public final class TinkerComponents {
     }
 
     private static <T> RecipeComponent<T> itemId(String name, Class<T> type, Loadable<T> loadable, ComponentRole role, Function<T, ItemStack> outputStack) {
+        return itemId(name, type, loadable, role, outputStack, null);
+    }
+
+    private static <T> RecipeComponent<T> itemId(String name, Class<T> type, Loadable<T> loadable, ComponentRole role,
+                                                  Function<T, ItemStack> outputStack, Function<ItemStack, T> outputValue) {
         return new LoadableComponent<>(name, type, loadable, role, ctx -> TypeDescJS.STRING,
-            json -> loadable.convert(json, name), value -> value == null ? "Item can't be empty" : "", outputStack);
+            json -> loadable.convert(json, name), value -> value == null ? "Item can't be empty" : "", outputStack, outputValue);
     }
 
     static JsonElement toJson(Object value) {
@@ -280,6 +329,125 @@ public final class TinkerComponents {
     private static boolean outputMatches(FluidOutput output, ReplacementMatch match, FluidOutput.Loadable loadable) {
         Fluid fluid = matchedFluid(match);
         return fluid != null && output != null && !output.isEmpty() && TagJson.fluidMatches(loadable.serialize(output), fluid);
+    }
+
+    public record MaterialItemResult(IMaterialItem item, int count) {
+    }
+
+    public record SwappableResult(ModifierId name, String value) {
+    }
+
+    public static final RecipeComponent<MaterialItemResult> MATERIAL_ITEM_RESULT = new RecipeComponent<>() {
+        @Override public String componentType() { return "material_item_result"; }
+        @Override public ComponentRole role() { return ComponentRole.OUTPUT; }
+        @Override public Class<?> componentClass() { return MaterialItemResult.class; }
+        @Override public TypeDescJS constructorDescription(DescriptionContext ctx) {
+            return TypeDescJS.any(TypeDescJS.STRING, TypeDescJS.object().add("item", TypeDescJS.STRING).add("count", TypeDescJS.NUMBER, true));
+        }
+        @Override public JsonElement write(RecipeJS recipe, MaterialItemResult value) {
+            JsonObject json = new JsonObject();
+            json.add("item", TinkerLoadables.MATERIAL_ITEM.serialize(value.item()));
+            if (value.count() != 1) json.addProperty("count", value.count());
+            return json;
+        }
+        @Override public MaterialItemResult read(RecipeJS recipe, Object from) {
+            JsonElement element = toJson(Wrapper.unwrapped(from));
+            if (element.isJsonPrimitive()) {
+                JsonObject wrapped = new JsonObject();
+                wrapped.add("item", element);
+                element = wrapped;
+            }
+            JsonObject json = element.getAsJsonObject();
+            IMaterialItem item = TinkerLoadables.MATERIAL_ITEM.convert(json.get("item"), "item");
+            int count = json.has("count") ? json.get("count").getAsInt() : 1;
+            if (count < 1) throw new IllegalArgumentException("count must be at least 1");
+            return new MaterialItemResult(item, count);
+        }
+        @Override public boolean isOutput(RecipeJS recipe, MaterialItemResult value, ReplacementMatch match) {
+            return match instanceof ItemMatch itemMatch && itemMatch.contains(new ItemStack(value.item().asItem()));
+        }
+        @Override public MaterialItemResult replaceOutput(RecipeJS recipe, MaterialItemResult original, ReplacementMatch match, OutputReplacement with) {
+            if (!this.isOutput(recipe, original, match) || !(with instanceof OutputItem output) || !(output.item.getItem() instanceof IMaterialItem item)) return original;
+            return new MaterialItemResult(item, original.count());
+        }
+        @Override public String checkEmpty(RecipeKey<MaterialItemResult> key, MaterialItemResult value) {
+            return value == null || value.item() == null ? "Material item result can't be empty" : "";
+        }
+    };
+
+    public static final RecipeComponent<SwappableResult> SWAPPABLE_RESULT = new RecipeComponent<>() {
+        @Override public String componentType() { return "swappable_result"; }
+        @Override public ComponentRole role() { return ComponentRole.OTHER; }
+        @Override public Class<?> componentClass() { return SwappableResult.class; }
+        @Override public TypeDescJS constructorDescription(DescriptionContext ctx) {
+            return TypeDescJS.object().add("name", TypeDescJS.STRING).add("value", TypeDescJS.STRING);
+        }
+        @Override public JsonElement write(RecipeJS recipe, SwappableResult value) {
+            JsonObject json = new JsonObject();
+            json.add("name", ModifierId.PARSER.serialize(value.name()));
+            json.addProperty("value", value.value());
+            return json;
+        }
+        @Override public SwappableResult read(RecipeJS recipe, Object from) {
+            JsonObject json = toJson(Wrapper.unwrapped(from)).getAsJsonObject();
+            if (!json.has("name") || !json.has("value")) {
+                throw new RecipeExceptionJS("Swappable modifier result requires both 'name' and 'value'");
+            }
+            return new SwappableResult(ModifierId.PARSER.convert(json.get("name"), "name"), json.get("value").getAsString());
+        }
+        @Override public String checkEmpty(RecipeKey<SwappableResult> key, SwappableResult value) {
+            return value == null || value.name() == null || value.value() == null ? "Swappable result can't be empty" : "";
+        }
+    };
+
+    private static final class SizedIngredientComponent implements RecipeComponent<SizedIngredient> {
+        @Override public String componentType() { return "tinker_sized_ingredient"; }
+        @Override public ComponentRole role() { return ComponentRole.INPUT; }
+        @Override public Class<?> componentClass() { return SizedIngredient.class; }
+        @Override public TypeDescJS constructorDescription(DescriptionContext ctx) {
+            return TypeDescJS.any(ctx.javaType(InputItem.class), TypeDescJS.object().add("item", TypeDescJS.STRING, true).add("tag", TypeDescJS.STRING, true).add("amount_needed", TypeDescJS.NUMBER, true));
+        }
+        @Override public JsonElement write(RecipeJS recipe, SizedIngredient value) { return SizedIngredient.LOADABLE.serialize(value); }
+        @Override public SizedIngredient read(RecipeJS recipe, Object from) {
+            Object unwrapped = Wrapper.unwrapped(from);
+            if (unwrapped instanceof SizedIngredient sized) return sized;
+            if (unwrapped instanceof InputItem item) return SizedIngredient.of(item.ingredient, item.count);
+            if (unwrapped instanceof CharSequence) {
+                InputItem item = InputItem.of(unwrapped.toString());
+                return SizedIngredient.of(item.ingredient, item.count);
+            }
+            return SizedIngredient.LOADABLE.convert(normalizeIngredient(toJson(unwrapped)), "ingredient", TypedMap.EMPTY);
+        }
+        @Override public boolean hasPriority(RecipeJS recipe, Object from) { return Wrapper.unwrapped(from) instanceof SizedIngredient || Wrapper.unwrapped(from) instanceof InputItem; }
+        @Override public boolean isInput(RecipeJS recipe, SizedIngredient value, ReplacementMatch match) {
+            return match instanceof ItemMatch itemMatch && value != null && itemMatch.contains(value.getIngredient());
+        }
+        @Override public SizedIngredient replaceInput(RecipeJS recipe, SizedIngredient original, ReplacementMatch match, InputReplacement with) {
+            if (!this.isInput(recipe, original, match) || !(with instanceof InputItem item)) return original;
+            return SizedIngredient.of(item.ingredient, original.getAmountNeeded());
+        }
+        @Override public String checkEmpty(RecipeKey<SizedIngredient> key, SizedIngredient value) { return value == null || value.isEmpty() ? "Sized ingredient can't be empty" : ""; }
+    }
+
+    private static final class ItemStackOutputComponent implements RecipeComponent<ItemStack> {
+        @Override public String componentType() { return "tinker_item_stack_output"; }
+        @Override public ComponentRole role() { return ComponentRole.OUTPUT; }
+        @Override public Class<?> componentClass() { return ItemStack.class; }
+        @Override public TypeDescJS constructorDescription(DescriptionContext ctx) { return ctx.javaType(OutputItem.class); }
+        @Override public JsonElement write(RecipeJS recipe, ItemStack value) { return ItemStackLoadable.REQUIRED_STACK_NBT.serialize(value); }
+        @Override public ItemStack read(RecipeJS recipe, Object from) {
+            Object unwrapped = Wrapper.unwrapped(from);
+            if (unwrapped instanceof ItemStack stack) return stack.copy();
+            if (unwrapped instanceof OutputItem output) return output.item.copy();
+            return ItemStackLoadable.REQUIRED_STACK_NBT.convert(toJson(unwrapped), "result");
+        }
+        @Override public boolean hasPriority(RecipeJS recipe, Object from) { Object unwrapped = Wrapper.unwrapped(from); return unwrapped instanceof ItemStack || unwrapped instanceof OutputItem; }
+        @Override public boolean isOutput(RecipeJS recipe, ItemStack value, ReplacementMatch match) { return match instanceof ItemMatch itemMatch && value != null && !value.isEmpty() && itemMatch.contains(value); }
+        @Override public ItemStack replaceOutput(RecipeJS recipe, ItemStack original, ReplacementMatch match, OutputReplacement with) {
+            if (!this.isOutput(recipe, original, match) || !(with instanceof OutputItem output)) return original;
+            ItemStack replacement = output.item.copy(); replacement.setCount(original.getCount()); return replacement;
+        }
+        @Override public String checkEmpty(RecipeKey<ItemStack> key, ItemStack value) { return value == null || value.isEmpty() ? "Item stack output can't be empty" : ""; }
     }
 
     private static final class IngredientComponent implements RecipeComponent<Ingredient> {
