@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.hp.tinkers_kubejs_arsenal.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MaterialTooltipCacheMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

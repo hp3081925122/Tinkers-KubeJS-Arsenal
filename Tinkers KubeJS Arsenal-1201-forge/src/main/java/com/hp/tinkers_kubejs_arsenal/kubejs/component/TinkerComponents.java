@@ -391,7 +391,11 @@ public final class TinkerComponents {
             return json;
         }
         @Override public SwappableResult read(RecipeJS recipe, Object from) {
-            JsonElement element = toJson(Wrapper.unwrapped(from));
+            Object unwrapped = Wrapper.unwrapped(from);
+            if (unwrapped instanceof SwappableResult result) {
+                return result;
+            }
+            JsonElement element = toJson(unwrapped);
             if (element.isJsonPrimitive()) {
                 return new SwappableResult(ModifierId.PARSER.convert(element, "name"), null);
             }

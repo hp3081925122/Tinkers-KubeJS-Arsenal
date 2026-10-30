@@ -17,9 +17,10 @@
 | S8 | 必填但改由链式方法设置的字段，放进 `chain()` 的 `later(...)` | 写出 JSON 时会统一检查；缺少时抛出英文异常，并提示该调用哪个方法 |
 | S9 | 默认值计算和校验都放在 `TinkerRecipeJS.serialize()`，**不要放在 `afterLoaded()`** | KubeJS 执行完构造函数后、执行链式方法之前，就会调用 `afterLoaded()`，这时链式设置的字段还是空的 |
 | S10 | 自定义链式方法放在**按配方家族划分**的 `RecipeJS` 子类里 | 现有：`MeltingRecipeJS`、`CastingRecipeJS`、`AlloyRecipeJS`、`ModifierRecipeJS`。不要放进通用的 `TinkerRecipeJS`，否则会覆盖其他配方自动生成的同名方法 |
-| S11 | 自定义方法的参数名要有意义，并且沿用已有的名字 | 编译时开启了 `-parameters`。ProbeJS 插件按参数名补全类型：`fluid` 提示流体和流体标签，`rate` 提示矿石倍率，`slot` 提示槽位类型。新增同类参数要沿用这些名字；新增参数类型时，要同步更新 `ArsenalProbeJSPlugin.PARAM_TYPES` |
+| S11 | 自定义方法的参数名要有意义，并且沿用已有的名字 | 编译时开启了 `-parameters`。ProbeJS 插件按参数名补全类型：`fluid` 提示流体和流体标签，`rate` 提示矿石倍率，`rateOrUnitSize` 提示矿石倍率或数字，`slot` 提示槽位类型。新增同类参数要沿用这些名字；新增参数类型时，要同步更新 `ArsenalProbeJSPlugin.PARAM_TYPES` |
 | S12 | 物品类参数直接声明为 KubeJS 的 `InputItem` / `OutputItem` | 这样能自动支持 `'4x minecraft:diamond'`、标签和 `Item.of(...)`，ProbeJS 也会自动补全 |
 | S13 | 方法名用英文 | 方法名和 JSON 键名保持一致，或用常见的英文单词 |
+| S14 | 同名方法、同样参数个数时，不要只靠 `String` 和数字类型区分重载 | Rhino 会把数字转成 `String` 并选错重载（实测：`.result(流体, 180, 90)` 被匹配到 `rate` 版本）。这种情况合并成一个 `Object` 参数，在方法里按类型分派 |
 
 ## 2. 已按规范完成的配方
 

@@ -38,6 +38,7 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
     private static final Map<String, String> PARAM_TYPES = Map.of(
         "fluid", "Special.Fluid | `#${Special.FluidTag}`",
         "rate", "\"none\" | \"metal\" | \"gem\" | \"default\"",
+        "rateOrUnitSize", "\"none\" | \"metal\" | \"gem\" | \"default\" | number",
         "slot", "Special." + TinkerTypes.SLOT_NAME
     );
 

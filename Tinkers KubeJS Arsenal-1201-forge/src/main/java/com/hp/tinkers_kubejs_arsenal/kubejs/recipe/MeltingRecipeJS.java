@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hp.tinkers_kubejs_arsenal.kubejs.component.TagJson;
 import dev.latvian.mods.kubejs.recipe.RecipeExceptionJS;
+import dev.latvian.mods.rhino.Wrapper;
 
 public class MeltingRecipeJS extends TinkerRecipeJS {
     private static final String ORE_MELTING = "ore_melting";
@@ -15,17 +16,11 @@ public class MeltingRecipeJS extends TinkerRecipeJS {
         return this;
     }
 
-    public MeltingRecipeJS result(String fluid, int amount, String rate) {
-        this.require(ORE_MELTING, "result(fluid, amount, rate)");
-        this.read("result", TagJson.fluidJson(fluid, amount));
-        this.read("rate", rate);
-        return this;
-    }
-
-    public MeltingRecipeJS result(String fluid, int amount, int unitSize) {
-        this.require(DAMAGABLE_MELTING, "result(fluid, amount, unitSize)");
+    public MeltingRecipeJS result(String fluid, int amount, Object rateOrUnitSize) {
         JsonObject json = TagJson.fluidJson(fluid, amount);
-        json.addProperty("unit_size", unitSize);
+        if (this.extra(json, rateOrUnitSize, "result") instanceof String rate) {
+            this.read("rate", rate);
+        }
         this.read("result", json);
         return this;
     }
@@ -34,17 +29,11 @@ public class MeltingRecipeJS extends TinkerRecipeJS {
         return this.appendByproduct(TagJson.fluidJson(fluid, amount));
     }
 
-    public MeltingRecipeJS byproduct(String fluid, int amount, String rate) {
-        this.require(ORE_MELTING, "byproduct(fluid, amount, rate)");
+    public MeltingRecipeJS byproduct(String fluid, int amount, Object rateOrUnitSize) {
         JsonObject json = TagJson.fluidJson(fluid, amount);
-        json.addProperty("rate", rate);
-        return this.appendByproduct(json);
-    }
-
-    public MeltingRecipeJS byproduct(String fluid, int amount, int unitSize) {
-        this.require(DAMAGABLE_MELTING, "byproduct(fluid, amount, unitSize)");
-        JsonObject json = TagJson.fluidJson(fluid, amount);
-        json.addProperty("unit_size", unitSize);
+        if (this.extra(json, rateOrUnitSize, "byproduct") instanceof String rate) {
+            json.addProperty("rate", rate);
+        }
         return this.appendByproduct(json);
     }
 
@@ -57,6 +46,20 @@ public class MeltingRecipeJS extends TinkerRecipeJS {
         array.add(json);
         this.read("byproducts", array);
         return this;
+    }
+
+    private Object extra(JsonObject json, Object rateOrUnitSize, String method) {
+        Object value = Wrapper.unwrapped(rateOrUnitSize);
+        if (value instanceof Number unitSize) {
+            this.require(DAMAGABLE_MELTING, method + "(fluid, amount, unitSize)");
+            json.addProperty("unit_size", unitSize.intValue());
+            return null;
+        }
+        if (value instanceof CharSequence rate) {
+            this.require(ORE_MELTING, method + "(fluid, amount, rate)");
+            return rate.toString();
+        }
+        throw new RecipeExceptionJS("." + method + "(fluid, amount, x) expects a rate string on tconstruct:" + ORE_MELTING + " or a unit size number on tconstruct:" + DAMAGABLE_MELTING);
     }
 
     private void require(String path, String method) {
