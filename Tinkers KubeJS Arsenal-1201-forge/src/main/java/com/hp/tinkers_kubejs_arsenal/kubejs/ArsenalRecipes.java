@@ -18,13 +18,13 @@ import net.minecraft.world.level.material.Fluid;
 import slimeknights.tconstruct.library.recipe.casting.ICastingRecipe;
 import slimeknights.tconstruct.library.recipe.melting.IMeltingRecipe;
 
-public final class TinkerRecipes {
+public final class ArsenalRecipes {
     private static final int BASE_UNIT = 90;
     private static final String NON_SINGULAR_ORE_RATES = "tconstruct:non_singular_ore_rates";
     private static final String ORE_RATE_SPARSE = "forge:ore_rates/sparse";
     private static final String ORE_RATE_DENSE = "forge:ore_rates/dense";
 
-    private TinkerRecipes() {
+    private ArsenalRecipes() {
     }
 
     public static void metal(RecipesEventJS event, Map<?, ?> options) {
@@ -32,10 +32,10 @@ public final class TinkerRecipes {
         Object nameValue = map.get("name");
         Object fluidValue = map.get("fluid");
         if (nameValue == null || String.valueOf(nameValue).isBlank()) {
-            throw new RecipeExceptionJS("TinkerRecipes.metal requires 'name'");
+            throw new RecipeExceptionJS("ArsenalRecipes.metal requires 'name'");
         }
         if (fluidValue == null || String.valueOf(fluidValue).isBlank()) {
-            throw new RecipeExceptionJS("TinkerRecipes.metal requires 'fluid' (fluid id or '#fluid_tag')");
+            throw new RecipeExceptionJS("ArsenalRecipes.metal requires 'fluid' (fluid id or '#fluid_tag')");
         }
         Metal metal = new Metal(event, String.valueOf(nameValue), String.valueOf(fluidValue), map.get("temperature"), byproducts(map.get("byproducts")));
         metal.melting("block", "storage_blocks/" + metal.name, 9.0F, 3.0F);
@@ -59,7 +59,7 @@ public final class TinkerRecipes {
         for (Object entry : ListJS.orSelf(value)) {
             Map<?, ?> map = MapJS.of(entry);
             if (map == null || map.get("fluid") == null) {
-                throw new RecipeExceptionJS("Each TinkerRecipes.metal byproduct needs a 'fluid'");
+                throw new RecipeExceptionJS("Each ArsenalRecipes.metal byproduct needs a 'fluid'");
             }
             int amount = map.get("amount") instanceof Number number ? number.intValue() : BASE_UNIT;
             String rate = map.get("rate") == null ? "metal" : String.valueOf(map.get("rate"));
@@ -103,7 +103,7 @@ public final class TinkerRecipes {
         private int resolveTemperature() {
             Fluid resolved = TagJson.firstFluid(TagJson.fluidJson(this.fluid, BASE_UNIT));
             if (resolved == null) {
-                throw new RecipeExceptionJS("TinkerRecipes.metal cannot resolve fluid '" + this.fluid + "' for metal '" + this.name
+                throw new RecipeExceptionJS("ArsenalRecipes.metal cannot resolve fluid '" + this.fluid + "' for metal '" + this.name
                     + "'; the fluid tag is empty or unknown, so set 'temperature' explicitly");
             }
             return IMeltingRecipe.getTemperature(resolved);
@@ -214,7 +214,7 @@ public final class TinkerRecipes {
         private void add(String folder, String variant, JsonObject json) {
             ResourceLocation tinkersId = new ResourceLocation("tconstruct", "smeltery/" + folder + "/metal/" + this.name + "/" + variant);
             if (this.event.originalRecipes.containsKey(tinkersId)) {
-                ConsoleJS.SERVER.info("TinkerRecipes.metal skipped " + folder + "/" + variant + " for '" + this.name + "': Tinkers' Construct already provides " + tinkersId);
+                ConsoleJS.SERVER.info("ArsenalRecipes.metal skipped " + folder + "/" + variant + " for '" + this.name + "': Tinkers' Construct already provides " + tinkersId);
                 return;
             }
             ResourceLocation id = new ResourceLocation(TinkersKubejsArsenal.MOD_ID, "metal/" + this.name + "/" + folder + "/" + variant);

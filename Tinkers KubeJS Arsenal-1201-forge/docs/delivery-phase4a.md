@@ -4,7 +4,7 @@
 
 - `src/main/java/com/hp/tinkers_kubejs_arsenal/kubejs/material/MaterialDataEventJS.java`：服务端材料定义、23 个属性方法、trait/statTrait、字段校验。
 - `src/main/java/com/hp/tinkers_kubejs_arsenal/kubejs/material/MaterialAssetEventJS.java`：客户端渲染、颜色、后备贴图和语言数据。
-- `src/main/java/com/hp/tinkers_kubejs_arsenal/kubejs/material/TinkerMaterialEvents.java`：`TinkerMaterialEvents.data/assets` 事件组。
+- `src/main/java/com/hp/tinkers_kubejs_arsenal/kubejs/material/ArsenalMaterialEvents.java`：`ArsenalMaterialEvents.data/assets` 事件组。
 - `ArsenalKubeJSPlugin.java`：事件绑定及 KubeJS 资源/语言生成。
 - `run/kubejs/server_scripts/tkja_material_test.js`、`client_scripts/tkja_material_test.js`：覆盖接口和错误校验的测试脚本。
 

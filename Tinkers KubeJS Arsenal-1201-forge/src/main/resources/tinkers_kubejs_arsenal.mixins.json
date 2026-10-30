@@ -6,7 +6,11 @@
   "mixins": [
     "DataPackEventJSInvoker",
     "MaterialTooltipCacheMixin",
-    "ServerScriptManagerMixin"
+    "ServerScriptManagerMixin",
+    "ToolStackMixin"
+  ],
+  "client": [
+    "SpriteResourceLoaderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

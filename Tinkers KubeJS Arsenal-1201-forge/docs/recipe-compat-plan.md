@@ -113,7 +113,7 @@ ID 前缀都是 `tconstruct:`，字段一律以附录为准。
 | `table_filling` / `basin_filling` | `container` 必须是物品 ID |
 | `molding_table` / `molding_basin` | 沙铸模的制作 |
 
-第一期还要完成：第 3 节的全部流体组件、第 6 节的 `TinkerFluids` 常量和 `metal` 一键套装。
+第一期还要完成：第 3 节的全部流体组件、第 6 节的 `ArsenalFluids` 常量和 `metal` 一键套装。
 
 ### 第二期：材料与部件
 
@@ -171,8 +171,8 @@ ID 前缀都是 `tconstruct:`，字段一律以附录为准。
 
 通过 `registerBindings` 暴露，名字固定：
 
-1. `TinkerFluids`：照搬 `FluidValues` 的常量，包括 INGOT 90、NUGGET 10、METAL_BLOCK 810、GEM 100、GEM_SHARD 25 等，完整列表见附录第 4 节。直接引用 `FluidValues` 的字段，不手抄数值。
-2. `TinkerRecipes.metal(event, 选项对象)`：完全按匠魂 `SmelteryRecipeBuilder.metal()` 生成一种金属的整套配方（已实现）。
+1. `ArsenalFluids`：照搬 `FluidValues` 的常量，包括 INGOT 90、NUGGET 10、METAL_BLOCK 810、GEM 100、GEM_SHARD 25 等，完整列表见附录第 4 节。直接引用 `FluidValues` 的字段，不手抄数值。
+2. `ArsenalRecipes.metal(event, 选项对象)`：完全按匠魂 `SmelteryRecipeBuilder.metal()` 生成一种金属的整套配方（已实现）。
    - 选项：
      - `name`：必填，金属名；
      - `fluid`：必填，流体 ID 或 `#流体标签`；

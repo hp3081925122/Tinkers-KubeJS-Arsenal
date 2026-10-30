@@ -21,6 +21,7 @@
 | S12 | 物品类参数直接声明为 KubeJS 的 `InputItem` / `OutputItem` | 这样能自动支持 `'4x minecraft:diamond'`、标签和 `Item.of(...)`，ProbeJS 也会自动补全 |
 | S13 | 方法名用英文 | 方法名和 JSON 键名保持一致，或用常见的英文单词 |
 | S14 | 同名方法、同样参数个数时，不要只靠 `String` 和数字类型区分重载 | Rhino 会把数字转成 `String` 并选错重载（实测：`.result(流体, 180, 90)` 被匹配到 `rate` 版本）。这种情况合并成一个 `Object` 参数，在方法里按类型分派 |
+| S15 | 对 JS 暴露的全局名字（绑定、事件组）一律用 `Arsenal` 开头 | 以 `Tinker` 开头会被当成匠魂自带的接口，用户遇到问题会去找匠魂，匠魂自己也有 `TinkerFluids` 这类同名类。现有名字：`ArsenalFluids`、`ArsenalRecipes`、`ArsenalMaterialEvents`；后续计划中的 `ArsenalTool`、`ArsenalModifierEvents` 同样遵守。ProbeJS 补全里的类型名（如 `Special.TinkerModifier`）只描述匠魂的 ID 类型，不是全局名字，不受此限 |
 
 ## 2. 已按规范完成的配方
 

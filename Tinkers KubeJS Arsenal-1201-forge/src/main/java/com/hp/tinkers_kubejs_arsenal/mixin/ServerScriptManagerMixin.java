@@ -1,7 +1,11 @@
 package com.hp.tinkers_kubejs_arsenal.mixin;
 
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialDataEventJS;
-import com.hp.tinkers_kubejs_arsenal.kubejs.material.TinkerMaterialEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalModifierEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ModifierDataEventJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialTagEventJS;
+import com.hp.tinkers_kubejs_arsenal.network.TinkerMaterialNetwork;
 import com.google.gson.JsonObject;
 import dev.latvian.mods.kubejs.bindings.event.ServerEvents;
 import dev.latvian.mods.kubejs.event.EventJS;
@@ -28,7 +32,7 @@ public abstract class ServerScriptManagerMixin {
         this.tkja$pendingPack = null;
         if (event instanceof DataPackEventJS pack) {
             MaterialDataEventJS data = new MaterialDataEventJS();
-            TinkerMaterialEvents.DATA.post(data);
+            ArsenalMaterialEvents.DATA.post(data);
             boolean added = false;
             for (MaterialDataEventJS.MaterialDefinition material : data.getMaterials().values()) {
                 ResourceLocation id = material.id();
@@ -48,6 +52,27 @@ public abstract class ServerScriptManagerMixin {
                 if (material.hasTraits()) {
                     add(pack, id, "traits", material.traits());
                 }
+                added = true;
+            }
+            ModifierDataEventJS modifiers = new ModifierDataEventJS();
+            ArsenalModifierEvents.DATA.post(modifiers);
+            for (ModifierDataEventJS.ModifierDefinition modifier : modifiers.getModifiers().values()) {
+                ResourceLocation id = modifier.id();
+                if (modifier.isInvalid()) {
+                    ConsoleJS.SERVER.error("Modifier " + id + " was not generated because its definition has errors");
+                    continue;
+                }
+                pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/modifiers/" + id.getPath()), modifier.json());
+                added = true;
+            }
+            TinkerMaterialNetwork.update(data.getMaterials(), modifiers.getModifiers());
+            if (added && !ServerEvents.HIGH_DATA.hasListeners()) {
+                this.tkja$pendingPack = pack;
+            }
+            MaterialTagEventJS tags = new MaterialTagEventJS();
+            ArsenalMaterialEvents.TAGS.post(tags);
+            for (var entry : tags.getTags().entrySet()) {
+                pack.addJson(new ResourceLocation(entry.getKey().getNamespace(), "tinkering/tags/materials/" + entry.getKey().getPath()), entry.getValue().json());
                 added = true;
             }
             if (added && !ServerEvents.HIGH_DATA.hasListeners()) {

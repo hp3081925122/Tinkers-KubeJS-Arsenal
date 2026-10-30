@@ -13,6 +13,8 @@ public final class TinkerTypes {
     public static final String MATERIAL_ITEM_NAME = "TinkerMaterialItem";
     public static final String MODIFIABLE_NAME = "TinkerModifiable";
     public static final String HARVEST_TIER_NAME = "TinkerHarvestTier";
+    public static final String TOOL_STAT_NAME = "TinkerToolStat";
+    public static final String ATTRIBUTE_NAME = "ArsenalAttribute";
 
     public static final TypeDescJS MATERIAL = special(MATERIAL_NAME);
     public static final TypeDescJS MODIFIER = special(MODIFIER_NAME);

@@ -2,7 +2,7 @@ package com.hp.tinkers_kubejs_arsenal.kubejs;
 
 import slimeknights.tconstruct.library.recipe.FluidValues;
 
-public final class TinkerFluids {
+public final class ArsenalFluids {
     public static final int INGOT = FluidValues.INGOT;
     public static final int NUGGET = FluidValues.NUGGET;
     public static final int METAL_BLOCK = FluidValues.METAL_BLOCK;
@@ -25,6 +25,6 @@ public final class TinkerFluids {
     public static final int SIP = FluidValues.SIP;
     public static final int LANTERN_CAPACITY = FluidValues.LANTERN_CAPACITY;
 
-    private TinkerFluids() {
+    private ArsenalFluids() {
     }
 }

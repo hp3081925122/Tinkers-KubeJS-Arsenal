@@ -11,13 +11,19 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialAssetEventJS;
-import com.hp.tinkers_kubejs_arsenal.kubejs.material.TinkerMaterialEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalModifierEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
 
 public class ArsenalKubeJSPlugin extends KubeJSPlugin {
     private MaterialAssetEventJS assets;
 
     @Override
-    public void registerEvents() { TinkerMaterialEvents.register(); }
+    public void registerEvents() {
+        ArsenalMaterialEvents.register();
+        ArsenalModifierEvents.register();
+        ArsenalToolEvents.register();
+    }
 
     @Override
     public void registerRecipeSchemas(RegisterRecipeSchemasEvent event) {
@@ -92,21 +98,24 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
 
     @Override
     public void registerBindings(BindingsEvent event) {
-        event.add("TinkerFluids", TinkerFluids.class);
-        event.add("TinkerRecipes", TinkerRecipes.class);
-        event.add("TinkerMaterialEvents", TinkerMaterialEvents.wrapper(event.getType()));
+        event.add("ArsenalFluids", ArsenalFluids.class);
+        event.add("ArsenalRecipes", ArsenalRecipes.class);
+        event.add("ArsenalMaterialEvents", ArsenalMaterialEvents.wrapper(event.getType()));
+        event.add("ArsenalModifierEvents", ArsenalModifierEvents.wrapper(event.getType()));
+        event.add("ArsenalToolEvents", ArsenalToolEvents.wrapper(event.getType()));
+        event.add("ArsenalTool", ArsenalTool.class);
     }
 
     @Override
     public void generateAssetJsons(AssetJsonGenerator generator) {
         this.assets = new MaterialAssetEventJS();
-        TinkerMaterialEvents.ASSETS.post(this.assets);
+        ArsenalMaterialEvents.ASSETS.post(this.assets);
         Map<String, JsonObject> colors = new LinkedHashMap<>();
         for (MaterialAssetEventJS.MaterialAsset asset : this.assets.getMaterials().values()) {
             ResourceLocation id = asset.id();
-            generator.json(new ResourceLocation(id.getNamespace(), "tinkering/materials/" + id.getPath()), asset.render());
+            generator.json(new ResourceLocation(id.getNamespace(), "tinkering/materials/" + asset.outputPath()), asset.render());
             if (asset.textColor() != null) {
-                colors.computeIfAbsent(id.getNamespace(), namespace -> new JsonObject()).addProperty("material." + id.getNamespace() + "." + id.getPath(), asset.textColor());
+                colors.computeIfAbsent(id.getNamespace(), namespace -> new JsonObject()).addProperty(asset.translationKey(), asset.textColor());
             }
         }
         colors.forEach((namespace, json) -> generator.json(new ResourceLocation(namespace, "mantle/colors"), json));
@@ -119,7 +128,7 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
         }
         for (MaterialAssetEventJS.MaterialAsset asset : this.assets.getMaterials().values()) {
             ResourceLocation id = asset.id();
-            String base = "material." + id.getNamespace() + "." + id.getPath();
+            String base = asset.translationKey();
             asset.names().forEach((lang, text) -> event.map.put(new LangEventJS.Key(id.getNamespace(), lang, base), text));
             asset.flavors().forEach((lang, text) -> event.map.put(new LangEventJS.Key(id.getNamespace(), lang, base + ".flavor"), text));
             asset.encyclopedia().forEach((lang, text) -> event.map.put(new LangEventJS.Key(id.getNamespace(), lang, base + ".encyclopedia"), text));

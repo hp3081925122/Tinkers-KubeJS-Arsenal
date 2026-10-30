@@ -74,7 +74,7 @@
 ### 2.4 渲染与贴图（客户端）
 
 - 渲染信息字段：`texture`（可选）、`fallbacks`（字符串数组）、`color`（ARGB 或 RGB 十六进制）、`luminosity`（0～15）。
-- **TC 没有在运行时按调色板生成部件贴图的机制。** `/tconstruct generate part_textures` 是手动命令，它把贴图写进资源包目录。
+- **TC 自身没有在运行时按调色板生成部件贴图的机制。** `/tconstruct generate part_textures` 是手动命令，它把贴图写进资源包目录；本项目在 4C 增加了客户端运行时 SpriteSource，复用 TC 的生成配置和调色板变换器。
 - 但是 `MaterialRenderInfo.getSprite` 找不到材料专属贴图时，会依次尝试 `fallbacks` 指定的后备贴图（如 `head_metal`），再退回基础贴图，并用 `color` 着色。TC jar 里自带这些灰度后备贴图，后缀有 `metal`、`wood`、`rock`、`bone`、`crystal`、`slime_metal`、`slime_wood`、`primitive`、`stick` 等。所以**新材料只写颜色和后备贴图就能正常显示**，效果是整体着色，不如 TC 自带材料那样按调色板精细上色。精细上色放在第 4C 阶段。
 
 ## 3. 关键设计：热重载怎么接
@@ -96,7 +96,7 @@
 **做法：** 写一个 Mixin，注入 `dev.latvian.mods.kubejs.server.ServerScriptManager#wrapResourceManager`，位置在第 3 步发布 `highPriorityData` 之后、`ConsoleJS.SERVER.info("Scripts loaded")` 之前（`remap = false`）。在注入点：
 
 - 用 MixinExtras 的 `@Local` 拿到 high 优先级的那个 `VirtualKubeJSDataPack`（同一个方法里有两个同类型局部变量，必须用 `ordinal` 区分 high 和 low；开发环境里有 `mixinextras-forge 0.4.1`，实施前要先确认它在编译类路径上，不在就改用 `LocalCapture`）；
-- 发布本模组的服务端事件 `TinkerMaterialEvents.data`，收集脚本里定义的材料；
+- 发布本模组的服务端事件 `ArsenalMaterialEvents.data`，收集脚本里定义的材料；
 - 对每种材料调用 `VirtualKubeJSDataPack.addData(ResourceLocation, String)` 写入三个 JSON。`addData` 的 id 参数**不带 `data/` 前缀**，例如 `kubejs:tinkering/materials/stats/mythril.json`。
 
 写进 high 包的好处：优先级最高，可以覆盖 TC 或其他模组的同名材料。属性和特性是合并型加载器，所以“覆盖原版材料的部分属性”也能做到。这个能力写进交付说明，但不额外提供接口。
@@ -110,7 +110,7 @@ Mixin 写在已有的 `tinkers_kubejs_arsenal.mixins.json` 里。KubeJS 是本�
 - `KeyboardHandlerMixin` 在按下 `F3+T`、调用 `reloadResourcePacks()` 之前，先执行 `KubeJSClient.reloadClientScripts()`；
 - 随后 `GeneratedClientResourcePack` 被重新创建，其 `generate()` 依次调用插件的 `generateAssetJsons`、`generateLang`，再发布 `ClientEvents.highPriorityAssets`。
 
-所以客户端**不需要 Mixin**：在插件的 `generateAssetJsons` 里发布本模组的客户端事件 `TinkerMaterialEvents.assets`，生成渲染信息和 `mantle/colors.json`；在 `generateLang` 里写入语言。
+所以客户端**不需要 Mixin**：在插件的 `generateAssetJsons` 里发布本模组的客户端事件 `ArsenalMaterialEvents.assets`，生成渲染信息和 `mantle/colors.json`；在 `generateLang` 里写入语言。
 
 注意：
 
@@ -130,8 +130,14 @@ Mixin 写在已有的 `tinkers_kubejs_arsenal.mixins.json` 里。KubeJS 是本�
 |---|---|---|
 | **4A** | 第 5、6 节的服务端和客户端接口、`/reload` 和 `F3+T` 热重载、ProbeJS 补全、校验、测试脚本 | **必做** |
 | 4B | 材料变体（`kubejs:mythril#polished`）、材料标签（`tinkering/tags/materials`）、写出 `generator` 字段，让作者能用 TC 的 `/tconstruct generate part_textures` 生成精细贴图 | 4A 验收后再做 |
-| 4C | 运行时按调色板生成部件贴图（注册 SpriteSource，读取 TC 的 `generator_part_textures.json`）。工作量大，需要单独评估 | 待定 |
-| 4D | 服务器把外观（颜色、名称、渲染信息）同步给客户端，一处定义两边生效 | 待定 |
+| 4C | 运行时按调色板生成部件贴图（注册 SpriteSource，读取 TC 的 `generator_part_textures.json`） | 已完成 |
+| 4D | 服务器把外观（颜色、名称、渲染信息）同步给客户端，一处定义两边生效 | 已完成 |
+
+> **4B 状态（2026年10月30日）：** 已完成。材料变体、材料标签和 `generator` 字段已实现，详见 [delivery-phase4b.md](delivery-phase4b.md)。客户端实际进入游戏后的 `F3+T` 与首次资源加载仍待客户端测试。
+
+> **4C 状态（2026年10月30日）：** 已完成。客户端在方块图集加载时读取 TC 的 `generator_part_textures.json`，按材料渲染 JSON 的 `generator`、后备贴图、属性类型和变体规则生成内存 Sprite，并保留显式 PNG 的优先级，详见 [delivery-phase4c.md](delivery-phase4c.md)。
+
+> **4D 状态（2026年10月31日）：** 已完成。`ArsenalMaterialEvents.data` 现在可以同时声明服务端材料和客户端外观；服务端在数据包同步时通过 Forge 网络包发送渲染 JSON、Mantle 颜色和语言资源，客户端挂载内存资源包并重载资源。基础材料不再需要在 `client_scripts` 重复声明，详见 [delivery-phase4d.md](delivery-phase4d.md)。
 
 ## 5. 服务端接口（4A）
 
@@ -139,7 +145,7 @@ Mixin 写在已有的 `tinkers_kubejs_arsenal.mixins.json` 里。KubeJS 是本�
 
 ```js
 // server_scripts，改完执行 /reload
-TinkerMaterialEvents.data(event => {
+ArsenalMaterialEvents.data(event => {
   event.create('kubejs:mythril')
     .tier(3)
     .craftable(false)            // 可省略，默认 false；TC 要求必须写出，本模组总是写出
@@ -193,7 +199,7 @@ TinkerMaterialEvents.data(event => {
 
 ```js
 // client_scripts，改完按 F3+T
-TinkerMaterialEvents.assets(event => {
+ArsenalMaterialEvents.assets(event => {
   event.create('kubejs:mythril')
     .color('6FD0E8')                 // 渲染着色；也是默认的文字颜色
     .fallbacks('metal')              // 可变参数，按顺序尝试
@@ -220,6 +226,8 @@ TinkerMaterialEvents.assets(event => {
 - 没写 `.name` 时不生成语言条目。TC 会显示翻译键，这样作者能发现自己漏写了名称。
 - 没写 `.color` 时不写 `color` 字段（TC 默认白色），也不写文字颜色。
 - `mantle/colors.json` 每个命名空间只有一个文件。同一命名空间下的所有材料要合并写进同一个 JSON；KubeJS 生成包里同一路径只能放一个文件。
+
+4D 后，这些外观方法也可以直接链在 `ArsenalMaterialEvents.data` 的材料定义上。服务器会把生成的客户端资源同步给玩家；`ArsenalMaterialEvents.assets` 仍保留用于纯客户端材料变体和本地资源覆盖。
 
 ## 7. 本期不做
 

@@ -4,6 +4,7 @@ import com.google.gson.JsonPrimitive;
 import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerTypes;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialAssetEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialDataEventJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialTagEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.AlloyRecipeJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.CastingRecipeJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.MeltingRecipeJS;
@@ -33,6 +34,12 @@ import slimeknights.tconstruct.library.modifiers.ModifierManager;
 import slimeknights.tconstruct.library.recipe.TinkerRecipeTypes;
 import slimeknights.tconstruct.library.recipe.partbuilder.IPartBuilderRecipe;
 import slimeknights.tconstruct.library.tools.SlotType;
+import slimeknights.tconstruct.library.tools.stat.ToolStats;
+import net.minecraftforge.registries.ForgeRegistries;
+import com.hp.tinkers_kubejs_arsenal.kubejs.ArsenalTool;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ModifierDataEventJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ModifierHookEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ToolStatsEventJS;
 import slimeknights.tconstruct.library.tools.item.IModifiable;
 import slimeknights.tconstruct.library.tools.part.IMaterialItem;
 import slimeknights.tconstruct.library.tools.part.IToolPart;
@@ -58,7 +65,17 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
         Map.entry("stat", "Special." + TinkerTypes.MATERIAL_STAT_NAME + " | " + STAT_GROUPS),
         Map.entry("modifier", "Special." + TinkerTypes.MODIFIER_NAME),
         Map.entry("fallbacks", "(" + FALLBACKS + ")[]"),
-        Map.entry("lang", "\"en_us\" | \"zh_cn\" | (string & {})")
+        Map.entry("lang", "\"en_us\" | \"zh_cn\" | (string & {})"),
+        Map.entry("supportedStats", "(Special." + TinkerTypes.MATERIAL_STAT_NAME + " | (string & {}))[]"),
+        Map.entry("generator", "Record<string, any>"),
+        Map.entry("palette", "Record<string, string>"),
+        Map.entry("material", "Special." + TinkerTypes.MATERIAL_NAME),
+        Map.entry("toolStat", "Special." + TinkerTypes.TOOL_STAT_NAME),
+        Map.entry("statOperation", "\"add\" | \"percent\" | \"multiply_base\" | \"multiply_conditional\" | \"multiply_all\""),
+        Map.entry("attribute", "Special." + TinkerTypes.ATTRIBUTE_NAME),
+        Map.entry("attributeOperation", "\"addition\" | \"multiply_base\" | \"multiply_total\""),
+        Map.entry("levelDisplay", "\"default\" | \"single_level\" | \"no_levels\" | \"pluses\""),
+        Map.entry("tooltipDisplay", "\"always\" | \"tinker_station\" | \"never\"")
     );
 
     @Override
@@ -75,7 +92,9 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
             doc.specialType(TinkerTypes.TOOL_PART_NAME, literals(items(item -> item instanceof IToolPart), false));
             doc.specialType(TinkerTypes.MATERIAL_ITEM_NAME, literals(items(item -> item instanceof IMaterialItem), false));
             doc.specialType(TinkerTypes.MODIFIABLE_NAME, literals(items(item -> item instanceof IModifiable), false));
-            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class)) {
+            doc.specialType(TinkerTypes.TOOL_STAT_NAME, literals(ToolStats.getAllStats().stream().map(stat -> stat.getName().toString()), true));
+            doc.specialType(TinkerTypes.ATTRIBUTE_NAME, literals(ForgeRegistries.ATTRIBUTES.getKeys().stream().map(Object::toString), true));
+            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class)) {
                 doc.transformDocument(recipeClass, ArsenalProbeJSPlugin::describeParams);
             }
             return null;
