@@ -18,17 +18,11 @@ public class TinkerRecipeJS extends RecipeJS {
     public void afterLoaded() {
         super.afterLoaded();
         switch (this.getType().getPath()) {
-            case "melting", "ore_melting", "damagable_melting" -> this.applyMeltingDefaults();
-            case "casting_basin", "casting_table", "basin_duplication", "table_duplication", "retextured_casting_basin", "retextured_casting_table" ->
-                this.applyCastingDefaults();
-            case "material_fluid" -> this.applyTemperatureDefault("fluid");
-            case "material_melting" -> this.applyTemperatureDefault("result");
             case "alloy" -> {
                 Object inputs = this.value("inputs");
                 if (inputs == null || Array.getLength(inputs) < 2) {
                     throw new RecipeExceptionJS("Alloy recipe " + this.id + " requires at least 2 inputs");
                 }
-                this.applyTemperatureDefault("result");
             }
             case "melting_fuel" -> {
                 FluidIngredient fluid = this.value("fluid");
@@ -69,7 +63,27 @@ public class TinkerRecipeJS extends RecipeJS {
         }
     }
 
+    @Override
+    public void serialize() {
+        switch (this.getType().getPath()) {
+            case "melting", "ore_melting", "damagable_melting" -> this.applyMeltingDefaults();
+            case "casting_basin", "casting_table", "basin_duplication", "table_duplication", "retextured_casting_basin", "retextured_casting_table" ->
+                this.applyCastingDefaults();
+            case "material_fluid" -> this.applyTemperatureDefault("fluid");
+            case "material_melting", "alloy" -> this.applyTemperatureDefault("result");
+            default -> {
+            }
+        }
+        super.serialize();
+    }
+
     private void applyMeltingDefaults() {
+        if (this.value("result") == null) {
+            throw new RecipeExceptionJS("Melting recipe " + this.id + " (" + this.getType() + ") requires .result(fluid, amount)");
+        }
+        if (this.getAllValueMap().containsKey("rate") && this.value("rate") == null) {
+            throw new RecipeExceptionJS("Ore melting recipe " + this.id + " requires .result(fluid, amount, rate)");
+        }
         Integer temperature = this.value("temperature");
         boolean missingTime = this.value("time") == null;
         if (temperature != null && !missingTime) {
@@ -111,7 +125,7 @@ public class TinkerRecipeJS extends RecipeJS {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T value(String name) {
+    protected <T> T value(String name) {
         RecipeComponentValue<?> holder = this.getAllValueMap().get(name);
         return holder == null ? null : (T) holder.value;
     }
@@ -128,12 +142,20 @@ public class TinkerRecipeJS extends RecipeJS {
         }
     }
 
-    private JsonElement written(String name) {
+    protected JsonElement written(String name) {
         RecipeComponentValue<?> holder = this.getAllValueMap().get(name);
         return holder == null || holder.value == null ? null : this.serializeValue(holder);
     }
 
     private <T> JsonElement serializeValue(RecipeComponentValue<T> holder) {
         return holder.key.component.write(this, holder.value);
+    }
+
+    protected void read(String name, Object from) {
+        this.readValue(this.getAllValueMap().get(name), from);
+    }
+
+    private <T> void readValue(RecipeComponentValue<T> holder, Object from) {
+        this.setValue(holder.key, holder.key.component.read(this, from));
     }
 }

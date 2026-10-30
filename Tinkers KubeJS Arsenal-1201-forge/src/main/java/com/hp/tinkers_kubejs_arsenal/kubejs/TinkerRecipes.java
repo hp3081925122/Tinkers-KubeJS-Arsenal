@@ -69,17 +69,6 @@ public final class TinkerRecipes {
         return list;
     }
 
-    private static JsonObject fluidJson(String fluid, int amount) {
-        JsonObject json = new JsonObject();
-        if (fluid.startsWith("#")) {
-            json.addProperty("tag", fluid.substring(1));
-        } else {
-            json.addProperty("fluid", fluid);
-        }
-        json.addProperty("amount", amount);
-        return json;
-    }
-
     private static JsonObject tagJson(String tag) {
         JsonObject json = new JsonObject();
         json.addProperty("tag", tag);
@@ -112,7 +101,7 @@ public final class TinkerRecipes {
         }
 
         private int resolveTemperature() {
-            Fluid resolved = TagJson.firstFluid(fluidJson(this.fluid, BASE_UNIT));
+            Fluid resolved = TagJson.firstFluid(TagJson.fluidJson(this.fluid, BASE_UNIT));
             if (resolved == null) {
                 throw new RecipeExceptionJS("TinkerRecipes.metal cannot resolve fluid '" + this.fluid + "' for metal '" + this.name
                     + "'; the fluid tag is empty or unknown, so set 'temperature' explicitly");
@@ -127,7 +116,7 @@ public final class TinkerRecipes {
             JsonObject json = new JsonObject();
             json.addProperty("type", "tconstruct:melting");
             json.add("ingredient", tagJson("forge:" + itemTag));
-            json.add("result", fluidJson(this.fluid, (int) (BASE_UNIT * scale)));
+            json.add("result", TagJson.fluidJson(this.fluid, (int) (BASE_UNIT * scale)));
             json.addProperty("temperature", this.temperature);
             json.addProperty("time", IMeltingRecipe.calcTime(this.temperature, factor));
             this.add("melting", variant, json);
@@ -142,7 +131,7 @@ public final class TinkerRecipes {
             JsonObject json = new JsonObject();
             json.addProperty("type", "tconstruct:casting_basin");
             json.addProperty("cooling_time", ICastingRecipe.calcCoolingTime(this.temperature, amount));
-            json.add("fluid", fluidJson(this.fluid, amount));
+            json.add("fluid", TagJson.fluidJson(this.fluid, amount));
             json.add("result", tagJson(itemTag));
             this.add("casting", "block", json);
         }
@@ -166,7 +155,7 @@ public final class TinkerRecipes {
                 json.addProperty("cast_consumed", true);
             }
             json.addProperty("cooling_time", ICastingRecipe.calcCoolingTime(this.temperature, amount));
-            json.add("fluid", fluidJson(this.fluid, amount));
+            json.add("fluid", TagJson.fluidJson(this.fluid, amount));
             json.add("result", tagJson(itemTag));
             this.add("casting", variant, json);
         }
@@ -199,12 +188,12 @@ public final class TinkerRecipes {
             JsonObject json = new JsonObject();
             json.addProperty("type", "tconstruct:ore_melting");
             json.add("ingredient", ingredient);
-            json.add("result", fluidJson(this.fluid, (int) (BASE_UNIT * scale)));
+            json.add("result", TagJson.fluidJson(this.fluid, (int) (BASE_UNIT * scale)));
             json.addProperty("rate", "metal");
             json.addProperty("temperature", this.temperature);
             json.addProperty("time", IMeltingRecipe.calcTime(this.temperature, factor));
             if (this.byproduct != null) {
-                JsonObject output = fluidJson(this.byproduct.fluid(), (int) (this.byproduct.amount() * scale));
+                JsonObject output = TagJson.fluidJson(this.byproduct.fluid(), (int) (this.byproduct.amount() * scale));
                 output.addProperty("rate", this.byproduct.rate());
                 JsonArray byproducts = new JsonArray();
                 byproducts.add(output);

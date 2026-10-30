@@ -37,6 +37,17 @@ public final class TagJson {
         return list;
     }
 
+    public static JsonObject fluidJson(String fluid, int amount) {
+        JsonObject json = new JsonObject();
+        if (fluid.startsWith("#")) {
+            json.addProperty("tag", fluid.substring(1));
+        } else {
+            json.addProperty("fluid", fluid);
+        }
+        json.addProperty("amount", amount);
+        return json;
+    }
+
     public static TagContext context() {
         return TagContext.INSTANCE.getValue();
     }

@@ -4,6 +4,7 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerComponents;
 import com.google.gson.JsonElement;
 import slimeknights.tconstruct.common.TinkerTags;
 import com.google.gson.JsonNull;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.MeltingRecipeJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.TinkerRecipeJS;
 import dev.latvian.mods.kubejs.recipe.RecipeKey;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponent;
@@ -96,6 +97,13 @@ public final class TinkerRecipeSchemas {
 
     private static RecipeSchema schema(RecipeKey<?>... keys) {
         return new RecipeSchema(TinkerRecipeJS.class, TinkerRecipeJS::new, keys);
+    }
+
+    private static RecipeSchema meltingSchema(RecipeKey<Ingredient> ingredient, RecipeKey<?>... rest) {
+        RecipeKey<?>[] keys = new RecipeKey<?>[rest.length + 1];
+        keys[0] = ingredient;
+        System.arraycopy(rest, 0, keys, 1, rest.length);
+        return new RecipeSchema(MeltingRecipeJS.class, MeltingRecipeJS::new, keys).constructor(ingredient);
     }
 
     private static RecipeKey<String> group() {
@@ -228,37 +236,37 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema melting() {
-        return schema(
-            TinkerComponents.INGREDIENT_REQUIRED.key("ingredient"),
-            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result"),
+        RecipeKey<Ingredient> ingredient = TinkerComponents.INGREDIENT_REQUIRED.key("ingredient");
+        return meltingSchema(ingredient,
+            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").defaultOptional().noBuilders(),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             TinkerComponents.POSITIVE_INT.key("time").defaultOptional(),
-            fluidOutputs("byproducts"),
+            fluidOutputs("byproducts").noBuilders(),
             group()
         );
     }
 
     private static RecipeSchema oreMelting() {
         RecipeComponent<TinkerComponents.OreByproduct[]> byproducts = TinkerComponents.ORE_BYPRODUCT.asArray();
-        return schema(
-            TinkerComponents.INGREDIENT_REQUIRED.key("ingredient"),
-            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result"),
-            TinkerComponents.ORE_RATE.key("rate"),
+        RecipeKey<Ingredient> ingredient = TinkerComponents.INGREDIENT_REQUIRED.key("ingredient");
+        return meltingSchema(ingredient,
+            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").defaultOptional().noBuilders(),
+            TinkerComponents.ORE_RATE.key("rate").defaultOptional().noBuilders(),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             TinkerComponents.POSITIVE_INT.key("time").defaultOptional(),
-            byproducts.key("byproducts").optional(new TinkerComponents.OreByproduct[0]),
+            byproducts.key("byproducts").optional(new TinkerComponents.OreByproduct[0]).noBuilders(),
             group()
         );
     }
 
     private static RecipeSchema damagableMelting() {
         RecipeComponent<TinkerComponents.FluidOutputUnit[]> byproducts = TinkerComponents.FLUID_OUTPUT_UNIT.asArray();
-        return schema(
-            TinkerComponents.INGREDIENT_REQUIRED.key("ingredient"),
-            TinkerComponents.FLUID_OUTPUT_UNIT.key("result"),
+        RecipeKey<Ingredient> ingredient = TinkerComponents.INGREDIENT_REQUIRED.key("ingredient");
+        return meltingSchema(ingredient,
+            TinkerComponents.FLUID_OUTPUT_UNIT.key("result").defaultOptional().noBuilders(),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             TinkerComponents.POSITIVE_INT.key("time").defaultOptional(),
-            byproducts.key("byproducts").optional(new TinkerComponents.FluidOutputUnit[0]),
+            byproducts.key("byproducts").optional(new TinkerComponents.FluidOutputUnit[0]).noBuilders(),
             group()
         );
     }

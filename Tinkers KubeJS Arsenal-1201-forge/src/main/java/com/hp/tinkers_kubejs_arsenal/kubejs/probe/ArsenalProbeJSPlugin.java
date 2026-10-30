@@ -2,6 +2,10 @@ package com.hp.tinkers_kubejs_arsenal.kubejs.probe;
 
 import com.google.gson.JsonPrimitive;
 import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerTypes;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.MeltingRecipeJS;
+import com.probejs.jdoc.document.DocumentMethod;
+import com.probejs.jdoc.property.PropertyParam;
+import com.probejs.jdoc.property.PropertyType;
 import com.probejs.features.plugin.DocGenerationEventJS;
 import com.probejs.features.plugin.ProbeJSEvents;
 import dev.latvian.mods.kubejs.KubeJSPlugin;
@@ -36,8 +40,28 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
             doc.specialType(TinkerTypes.TOOL_PART_NAME, literals(items(item -> item instanceof IToolPart), false));
             doc.specialType(TinkerTypes.MATERIAL_ITEM_NAME, literals(items(item -> item instanceof IMaterialItem), false));
             doc.specialType(TinkerTypes.MODIFIABLE_NAME, literals(items(item -> item instanceof IModifiable), false));
+            doc.transformDocument(MeltingRecipeJS.class, document -> {
+                List<DocumentMethod> methods = document.getMethods().stream()
+                    .filter(method -> method.getName().equals("result") || method.getName().equals("byproduct"))
+                    .toList();
+                document.getMethods().removeAll(methods);
+                methods.forEach(ArsenalProbeJSPlugin::describeFluidMethod);
+                document.getMethods().addAll(methods);
+            });
             return null;
         });
+    }
+
+    private static void describeFluidMethod(DocumentMethod method) {
+        List<PropertyParam> params = method.getParams();
+        params.set(0, new PropertyParam("fluid", new PropertyType.Native("Special.Fluid | `#${Special.FluidTag}`"), false));
+        params.set(1, new PropertyParam("amount", params.get(1).getType(), false));
+        if (params.size() == 3) {
+            boolean rate = params.get(2).getType() instanceof PropertyType.Clazz clazz && clazz.getClassName().equals(String.class.getName());
+            params.set(2, rate
+                ? new PropertyParam("rate", new PropertyType.Native("\"none\" | \"metal\" | \"gem\" | \"default\""), false)
+                : new PropertyParam("unitSize", params.get(2).getType(), false));
+        }
     }
 
     private static Stream<String> patterns() {
