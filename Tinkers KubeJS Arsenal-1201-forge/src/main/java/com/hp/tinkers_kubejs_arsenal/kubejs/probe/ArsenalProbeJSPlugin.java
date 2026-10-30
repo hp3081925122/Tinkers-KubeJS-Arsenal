@@ -2,7 +2,11 @@ package com.hp.tinkers_kubejs_arsenal.kubejs.probe;
 
 import com.google.gson.JsonPrimitive;
 import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerTypes;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.AlloyRecipeJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.CastingRecipeJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.MeltingRecipeJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.ModifierRecipeJS;
+import com.probejs.jdoc.document.DocumentClass;
 import com.probejs.jdoc.document.DocumentMethod;
 import com.probejs.jdoc.property.PropertyParam;
 import com.probejs.jdoc.property.PropertyType;
@@ -13,6 +17,7 @@ import slimeknights.mantle.data.registry.IdAwareComponentRegistry;
 import dev.latvian.mods.kubejs.script.ScriptType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,6 +35,12 @@ import slimeknights.tconstruct.library.tools.part.IMaterialItem;
 import slimeknights.tconstruct.library.tools.part.IToolPart;
 
 public class ArsenalProbeJSPlugin extends KubeJSPlugin {
+    private static final Map<String, String> PARAM_TYPES = Map.of(
+        "fluid", "Special.Fluid | `#${Special.FluidTag}`",
+        "rate", "\"none\" | \"metal\" | \"gem\" | \"default\"",
+        "slot", "Special." + TinkerTypes.SLOT_NAME
+    );
+
     @Override
     public void onServerReload() {
         ProbeJSEvents.DOC_GEN.listenJava(ScriptType.SERVER, null, event -> {
@@ -43,28 +54,28 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
             doc.specialType(TinkerTypes.TOOL_PART_NAME, literals(items(item -> item instanceof IToolPart), false));
             doc.specialType(TinkerTypes.MATERIAL_ITEM_NAME, literals(items(item -> item instanceof IMaterialItem), false));
             doc.specialType(TinkerTypes.MODIFIABLE_NAME, literals(items(item -> item instanceof IModifiable), false));
-            doc.transformDocument(MeltingRecipeJS.class, document -> {
-                List<DocumentMethod> methods = document.getMethods().stream()
-                    .filter(method -> method.getName().equals("result") || method.getName().equals("byproduct"))
-                    .toList();
-                document.getMethods().removeAll(methods);
-                methods.forEach(ArsenalProbeJSPlugin::describeFluidMethod);
-                document.getMethods().addAll(methods);
-            });
+            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class)) {
+                doc.transformDocument(recipeClass, ArsenalProbeJSPlugin::describeParams);
+            }
             return null;
         });
     }
 
-    private static void describeFluidMethod(DocumentMethod method) {
-        List<PropertyParam> params = method.getParams();
-        params.set(0, new PropertyParam("fluid", new PropertyType.Native("Special.Fluid | `#${Special.FluidTag}`"), false));
-        params.set(1, new PropertyParam("amount", params.get(1).getType(), false));
-        if (params.size() == 3) {
-            boolean rate = params.get(2).getType() instanceof PropertyType.Clazz clazz && clazz.getClassName().equals(String.class.getName());
-            params.set(2, rate
-                ? new PropertyParam("rate", new PropertyType.Native("\"none\" | \"metal\" | \"gem\" | \"default\""), false)
-                : new PropertyParam("unitSize", params.get(2).getType(), false));
+    private static void describeParams(DocumentClass document) {
+        List<DocumentMethod> methods = document.getMethods().stream()
+            .filter(method -> method.getParams().stream().anyMatch(param -> PARAM_TYPES.containsKey(param.getName())))
+            .toList();
+        document.getMethods().removeAll(methods);
+        for (DocumentMethod method : methods) {
+            List<PropertyParam> params = method.getParams();
+            for (int i = 0; i < params.size(); i++) {
+                String type = PARAM_TYPES.get(params.get(i).getName());
+                if (type != null) {
+                    params.set(i, new PropertyParam(params.get(i).getName(), new PropertyType.Native(type), false));
+                }
+            }
         }
+        document.getMethods().addAll(methods);
     }
 
     private static Stream<String> patterns() {

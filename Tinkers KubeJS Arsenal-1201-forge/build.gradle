@@ -136,4 +136,6 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // 保留方法参数名，ProbeJS 补全会显示真实参数名
+    options.compilerArgs << '-parameters'
 }

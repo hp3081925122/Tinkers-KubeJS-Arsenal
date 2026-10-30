@@ -382,7 +382,7 @@ public final class TinkerComponents {
         @Override public ComponentRole role() { return ComponentRole.OTHER; }
         @Override public Class<?> componentClass() { return SwappableResult.class; }
         @Override public TypeDescJS constructorDescription(DescriptionContext ctx) {
-            return TypeDescJS.object().add("name", TinkerTypes.MODIFIER).add("value", TypeDescJS.STRING);
+            return TypeDescJS.any(TinkerTypes.MODIFIER, TypeDescJS.object().add("name", TinkerTypes.MODIFIER).add("value", TypeDescJS.STRING));
         }
         @Override public JsonElement write(RecipeJS recipe, SwappableResult value) {
             JsonObject json = new JsonObject();
@@ -391,14 +391,18 @@ public final class TinkerComponents {
             return json;
         }
         @Override public SwappableResult read(RecipeJS recipe, Object from) {
-            JsonObject json = toJson(Wrapper.unwrapped(from)).getAsJsonObject();
+            JsonElement element = toJson(Wrapper.unwrapped(from));
+            if (element.isJsonPrimitive()) {
+                return new SwappableResult(ModifierId.PARSER.convert(element, "name"), null);
+            }
+            JsonObject json = element.getAsJsonObject();
             if (!json.has("name") || !json.has("value")) {
                 throw new RecipeExceptionJS("Swappable modifier result requires both 'name' and 'value'");
             }
             return new SwappableResult(ModifierId.PARSER.convert(json.get("name"), "name"), json.get("value").getAsString());
         }
         @Override public String checkEmpty(RecipeKey<SwappableResult> key, SwappableResult value) {
-            return value == null || value.name() == null || value.value() == null ? "Swappable result can't be empty" : "";
+            return value == null || value.name() == null ? "Swappable result can't be empty" : "";
         }
     };
 

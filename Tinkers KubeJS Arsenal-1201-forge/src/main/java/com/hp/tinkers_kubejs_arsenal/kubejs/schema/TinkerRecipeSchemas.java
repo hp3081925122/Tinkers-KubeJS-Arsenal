@@ -4,7 +4,16 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerComponents;
 import com.google.gson.JsonElement;
 import slimeknights.tconstruct.common.TinkerTags;
 import com.google.gson.JsonNull;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.AlloyRecipeJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.CastingRecipeJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.MeltingRecipeJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.ModifierRecipeJS;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import com.hp.tinkers_kubejs_arsenal.kubejs.recipe.TinkerRecipeJS;
 import dev.latvian.mods.kubejs.recipe.RecipeKey;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponent;
@@ -25,6 +34,7 @@ import slimeknights.tconstruct.library.tools.part.IMaterialItem;
 import slimeknights.tconstruct.library.tools.part.IToolPart;
 
 public final class TinkerRecipeSchemas {
+    private static final Map<RecipeSchema, List<String>> CHAINED = new IdentityHashMap<>();
     public static final RecipeSchema CASTING_BASIN = casting();
     public static final RecipeSchema CASTING_TABLE = casting();
     public static final RecipeSchema BASIN_FILLING = filling();
@@ -99,11 +109,32 @@ public final class TinkerRecipeSchemas {
         return new RecipeSchema(TinkerRecipeJS.class, TinkerRecipeJS::new, keys);
     }
 
-    private static RecipeSchema meltingSchema(RecipeKey<Ingredient> ingredient, RecipeKey<?>... rest) {
-        RecipeKey<?>[] keys = new RecipeKey<?>[rest.length + 1];
-        keys[0] = ingredient;
-        System.arraycopy(rest, 0, keys, 1, rest.length);
-        return new RecipeSchema(MeltingRecipeJS.class, MeltingRecipeJS::new, keys).constructor(ingredient);
+    private static RecipeSchema chain(Class<? extends TinkerRecipeJS> type, Supplier<? extends TinkerRecipeJS> factory, RecipeKey<?> main,
+                                      RecipeKey<?>[] later, RecipeKey<?>... optional) {
+        List<RecipeKey<?>> keys = new ArrayList<>();
+        if (main != null) {
+            keys.add(main);
+        }
+        for (RecipeKey<?> key : later) {
+            keys.add(key.defaultOptional());
+        }
+        keys.addAll(Arrays.asList(optional));
+        RecipeSchema schema = new RecipeSchema(type, factory, keys.toArray(new RecipeKey<?>[0]));
+        if (main == null) {
+            schema.constructor();
+        } else {
+            schema.constructor(main);
+        }
+        CHAINED.put(schema, Arrays.stream(later).map(key -> key.name).toList());
+        return schema;
+    }
+
+    private static RecipeKey<?>[] later(RecipeKey<?>... keys) {
+        return keys;
+    }
+
+    public static List<String> chainedKeys(RecipeSchema schema) {
+        return CHAINED.getOrDefault(schema, List.of());
     }
 
     private static RecipeKey<String> group() {
@@ -123,9 +154,9 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema casting() {
-        return schema(
-            TinkerComponents.FLUID_INGREDIENT.key("fluid"),
+        return chain(CastingRecipeJS.class, CastingRecipeJS::new,
             TinkerComponents.ITEM_OUTPUT_REQUIRED_ITEM.key("result"),
+            later(TinkerComponents.FLUID_INGREDIENT.key("fluid").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("cooling_time").defaultOptional(),
             emptyIngredient("cast"),
             bool("cast_consumed"),
@@ -135,46 +166,44 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema filling() {
-        return schema(
-            TinkerComponents.POSITIVE_INT.key("fluid_amount"),
+        return chain(TinkerRecipeJS.class, TinkerRecipeJS::new,
             TinkerComponents.ITEM.key("container"),
+            later(TinkerComponents.POSITIVE_INT.key("fluid_amount")),
             group()
         );
     }
 
     private static RecipeSchema duplication() {
-        return schema(
+        return chain(CastingRecipeJS.class, CastingRecipeJS::new,
             TinkerComponents.INGREDIENT_REQUIRED.key("cast"),
-            TinkerComponents.FLUID_INGREDIENT.key("fluid"),
+            later(TinkerComponents.FLUID_INGREDIENT.key("fluid").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("cooling_time").defaultOptional(),
             group()
         );
     }
 
     private static RecipeSchema potion() {
-        return schema(
-            TinkerComponents.INGREDIENT_REQUIRED.key("bottle"),
-            TinkerComponents.FLUID_INGREDIENT.key("fluid"),
+        return chain(CastingRecipeJS.class, CastingRecipeJS::new,
             TinkerComponents.ITEM_RESULT.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("bottle"), TinkerComponents.FLUID_INGREDIENT.key("fluid").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("cooling_time").optional(5),
             group()
         );
     }
 
     private static RecipeSchema tipping() {
-        return schema(
-            TinkerComponents.INGREDIENT_REQUIRED.key("tools"),
-            TinkerComponents.FLUID_INGREDIENT.key("fluid"),
+        return chain(CastingRecipeJS.class, CastingRecipeJS::new,
             TinkerComponents.MODIFIER.key("modifier"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.FLUID_INGREDIENT.key("fluid").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("cooling_time").optional(5),
             group()
         );
     }
 
     private static RecipeSchema materialCasting() {
-        return schema(
-            TinkerComponents.POSITIVE_INT.key("item_cost"),
+        return chain(TinkerRecipeJS.class, TinkerRecipeJS::new,
             TinkerComponents.MATERIAL_ITEM.key("result"),
+            later(TinkerComponents.POSITIVE_INT.key("item_cost")),
             emptyIngredient("cast"),
             TinkerComponents.MATERIAL_PREDICATE.key("allowed_materials").optional(MaterialPredicate.ANY),
             bool("cast_consumed"),
@@ -184,9 +213,9 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema compositeCasting() {
-        return schema(
-            TinkerComponents.POSITIVE_INT.key("item_cost"),
+        return chain(TinkerRecipeJS.class, TinkerRecipeJS::new,
             TinkerComponents.MATERIAL_ITEM.key("result"),
+            later(TinkerComponents.POSITIVE_INT.key("item_cost")),
             TinkerComponents.MATERIAL_PREDICATE.key("allowed_materials").optional(MaterialPredicate.ANY),
             TinkerComponents.MATERIAL_STATS.key("casting_stat_conflict").defaultOptional(),
             group()
@@ -195,9 +224,9 @@ public final class TinkerRecipeSchemas {
 
     private static RecipeSchema toolCasting() {
         RecipeComponent<MaterialVariantId[]> materials = TinkerComponents.MATERIAL_VARIANT.asArray();
-        return schema(
-            TinkerComponents.POSITIVE_INT.key("item_cost"),
+        return chain(TinkerRecipeJS.class, TinkerRecipeJS::new,
             TinkerComponents.MODIFIABLE_ITEM.key("result"),
+            later(TinkerComponents.POSITIVE_INT.key("item_cost")),
             emptyIngredient("cast"),
             TinkerComponents.CAST_PURPOSE.key("cast_purpose").optional(ToolCastingRecipe.CastPurpose.MAYBE_MATERIAL),
             TinkerComponents.MATERIAL_PREDICATE.key("allowed_materials").optional(MaterialPredicate.ANY),
@@ -207,38 +236,37 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema partSwappingCasting() {
-        return schema(
+        return chain(TinkerRecipeJS.class, TinkerRecipeJS::new,
             TinkerComponents.INGREDIENT_OPTIONAL.key("tools").allowEmpty(),
-            TinkerComponents.POSITIVE_INT.key("item_cost"),
-            TinkerComponents.NON_NEGATIVE_INT.key("index"),
+            later(TinkerComponents.POSITIVE_INT.key("item_cost"), TinkerComponents.NON_NEGATIVE_INT.key("index")),
             TinkerComponents.MATERIAL_PREDICATE.key("allowed_materials").optional(MaterialPredicate.ANY),
             group()
         );
     }
 
     private static RecipeSchema materialFluid() {
-        return schema(
-            TinkerComponents.FLUID_INGREDIENT.key("fluid"),
+        return chain(CastingRecipeJS.class, CastingRecipeJS::new,
+            TinkerComponents.MATERIAL_VARIANT.key("output"),
+            later(TinkerComponents.FLUID_INGREDIENT.key("fluid").noBuilders()),
             TinkerComponents.MATERIAL_VARIANT.key("input").defaultOptional(),
-            TinkerComponents.MATERIAL_VARIANT.key("output").defaultOptional(),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             bool("hide_in_book")
         );
     }
 
     private static RecipeSchema molding() {
-        return schema(
-            TinkerComponents.INGREDIENT_REQUIRED.key("material"),
+        return chain(TinkerRecipeJS.class, TinkerRecipeJS::new,
             TinkerComponents.ITEM_OUTPUT_REQUIRED_STACK.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("material")),
             emptyIngredient("pattern"),
             bool("pattern_consumed")
         );
     }
 
     private static RecipeSchema melting() {
-        RecipeKey<Ingredient> ingredient = TinkerComponents.INGREDIENT_REQUIRED.key("ingredient");
-        return meltingSchema(ingredient,
-            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").defaultOptional().noBuilders(),
+        return chain(MeltingRecipeJS.class, MeltingRecipeJS::new,
+            TinkerComponents.INGREDIENT_REQUIRED.key("ingredient"),
+            later(TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").noBuilders()),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             TinkerComponents.POSITIVE_INT.key("time").defaultOptional(),
             fluidOutputs("byproducts").noBuilders(),
@@ -248,10 +276,9 @@ public final class TinkerRecipeSchemas {
 
     private static RecipeSchema oreMelting() {
         RecipeComponent<TinkerComponents.OreByproduct[]> byproducts = TinkerComponents.ORE_BYPRODUCT.asArray();
-        RecipeKey<Ingredient> ingredient = TinkerComponents.INGREDIENT_REQUIRED.key("ingredient");
-        return meltingSchema(ingredient,
-            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").defaultOptional().noBuilders(),
-            TinkerComponents.ORE_RATE.key("rate").defaultOptional().noBuilders(),
+        return chain(MeltingRecipeJS.class, MeltingRecipeJS::new,
+            TinkerComponents.INGREDIENT_REQUIRED.key("ingredient"),
+            later(TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").noBuilders(), TinkerComponents.ORE_RATE.key("rate").noBuilders()),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             TinkerComponents.POSITIVE_INT.key("time").defaultOptional(),
             byproducts.key("byproducts").optional(new TinkerComponents.OreByproduct[0]).noBuilders(),
@@ -261,9 +288,9 @@ public final class TinkerRecipeSchemas {
 
     private static RecipeSchema damagableMelting() {
         RecipeComponent<TinkerComponents.FluidOutputUnit[]> byproducts = TinkerComponents.FLUID_OUTPUT_UNIT.asArray();
-        RecipeKey<Ingredient> ingredient = TinkerComponents.INGREDIENT_REQUIRED.key("ingredient");
-        return meltingSchema(ingredient,
-            TinkerComponents.FLUID_OUTPUT_UNIT.key("result").defaultOptional().noBuilders(),
+        return chain(MeltingRecipeJS.class, MeltingRecipeJS::new,
+            TinkerComponents.INGREDIENT_REQUIRED.key("ingredient"),
+            later(TinkerComponents.FLUID_OUTPUT_UNIT.key("result").noBuilders()),
             TinkerComponents.NON_NEGATIVE_INT.key("temperature").defaultOptional(),
             TinkerComponents.POSITIVE_INT.key("time").defaultOptional(),
             byproducts.key("byproducts").optional(new TinkerComponents.FluidOutputUnit[0]).noBuilders(),
@@ -347,38 +374,64 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema modifier() {
-        return schema(TinkerComponents.SIZED_INGREDIENT.asArray().key("inputs"), TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.MODIFIER.key("result"),
+        return chain(ModifierRecipeJS.class, ModifierRecipeJS::new,
+            TinkerComponents.MODIFIER.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.SIZED_INGREDIENT.asArray().key("inputs").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16),
-            TinkerComponents.LEVEL_RANGE.key("level").optional(new slimeknights.tconstruct.library.json.IntRange(1, 32767)),
-            TinkerComponents.SLOT_COUNT.key("slots").defaultOptional(), bool("allow_crystal").optional(true), bool("check_trait_level"));
+            TinkerComponents.LEVEL_RANGE.key("level").optional(new slimeknights.tconstruct.library.json.IntRange(1, 32767)).noBuilders(),
+            TinkerComponents.SLOT_COUNT.key("slots").defaultOptional().noBuilders(),
+            bool("allow_crystal").optional(true),
+            bool("check_trait_level")
+        );
     }
 
     private static RecipeSchema incrementalModifier() {
-        return schema(TinkerComponents.INGREDIENT_REQUIRED.key("input"), TinkerComponents.POSITIVE_INT.key("needed_per_level"), TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.MODIFIER.key("result"),
-            TinkerComponents.POSITIVE_INT.key("amount_per_item").optional(1), TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16),
-            TinkerComponents.LEVEL_RANGE.key("level").optional(new slimeknights.tconstruct.library.json.IntRange(1, 32767)),
-            TinkerComponents.SLOT_COUNT.key("slots").defaultOptional(), TinkerComponents.ITEM_OUTPUT_OPTIONAL_STACK.key("leftover").optional(ItemOutput.EMPTY),
-            bool("allow_crystal").optional(true), bool("check_trait_level"));
+        return chain(ModifierRecipeJS.class, ModifierRecipeJS::new,
+            TinkerComponents.MODIFIER.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.INGREDIENT_REQUIRED.key("input").noBuilders(), TinkerComponents.POSITIVE_INT.key("needed_per_level")),
+            TinkerComponents.POSITIVE_INT.key("amount_per_item").optional(1),
+            TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16),
+            TinkerComponents.LEVEL_RANGE.key("level").optional(new slimeknights.tconstruct.library.json.IntRange(1, 32767)).noBuilders(),
+            TinkerComponents.SLOT_COUNT.key("slots").defaultOptional().noBuilders(),
+            TinkerComponents.ITEM_OUTPUT_OPTIONAL_STACK.key("leftover").optional(ItemOutput.EMPTY),
+            bool("allow_crystal").optional(true),
+            bool("check_trait_level")
+        );
     }
 
     private static RecipeSchema swappableModifier() {
-        return schema(TinkerComponents.SIZED_INGREDIENT.asArray().key("inputs"), TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.SWAPPABLE_RESULT.key("result"),
+        return chain(ModifierRecipeJS.class, ModifierRecipeJS::new,
+            TinkerComponents.SWAPPABLE_RESULT.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.SIZED_INGREDIENT.asArray().key("inputs").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16),
-            TinkerComponents.VARIANT_FORMATTER.key("variant_formatter").defaultOptional(), TinkerComponents.SLOT_COUNT.key("slots").defaultOptional(), bool("allow_crystal").optional(true));
+            TinkerComponents.VARIANT_FORMATTER.key("variant_formatter").defaultOptional(),
+            TinkerComponents.SLOT_COUNT.key("slots").defaultOptional().noBuilders(),
+            bool("allow_crystal").optional(true)
+        );
     }
 
     private static RecipeSchema multilevelModifier() {
-        return schema(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.MODIFIER.key("result"), TinkerComponents.LEVEL_ENTRY.asArray().key("levels"),
-            TinkerComponents.SIZED_INGREDIENT.asArray().key("inputs").optional(new slimeknights.mantle.recipe.ingredient.SizedIngredient[0]),
-            TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16), bool("allow_crystal").optional(true), bool("check_trait_level"));
+        return chain(ModifierRecipeJS.class, ModifierRecipeJS::new,
+            TinkerComponents.MODIFIER.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.LEVEL_ENTRY.asArray().key("levels").noBuilders()),
+            TinkerComponents.SIZED_INGREDIENT.asArray().key("inputs").optional(new slimeknights.mantle.recipe.ingredient.SizedIngredient[0]).noBuilders(),
+            TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16),
+            bool("allow_crystal").optional(true),
+            bool("check_trait_level")
+        );
     }
 
     private static RecipeSchema multilevelIncrementalModifier() {
-        return schema(TinkerComponents.INGREDIENT_REQUIRED.key("input"), TinkerComponents.POSITIVE_INT.key("needed_per_level"), TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.MODIFIER.key("result"),
-            TinkerComponents.LEVEL_ENTRY.asArray().key("levels"), TinkerComponents.POSITIVE_INT.key("amount_per_item").optional(1),
+        return chain(ModifierRecipeJS.class, ModifierRecipeJS::new,
+            TinkerComponents.MODIFIER.key("result"),
+            later(TinkerComponents.INGREDIENT_REQUIRED.key("tools"), TinkerComponents.INGREDIENT_REQUIRED.key("input").noBuilders(), TinkerComponents.POSITIVE_INT.key("needed_per_level"),
+                TinkerComponents.LEVEL_ENTRY.asArray().key("levels").noBuilders()),
+            TinkerComponents.POSITIVE_INT.key("amount_per_item").optional(1),
             TinkerComponents.POSITIVE_INT.key("max_tool_size").optional(16),
-            TinkerComponents.ITEM_OUTPUT_OPTIONAL_STACK.key("leftover").optional(ItemOutput.EMPTY), bool("allow_crystal").optional(true),
-            bool("check_trait_level"));
+            TinkerComponents.ITEM_OUTPUT_OPTIONAL_STACK.key("leftover").optional(ItemOutput.EMPTY),
+            bool("allow_crystal").optional(true),
+            bool("check_trait_level")
+        );
     }
 
     private static RecipeSchema overslimeModifier() {
@@ -465,10 +518,9 @@ public final class TinkerRecipeSchemas {
     }
 
     private static RecipeSchema alloy() {
-        RecipeComponent<AlloyRecipe.AlloyIngredient[]> inputs = TinkerComponents.ALLOY_INGREDIENT.asArray();
-        return schema(
-            inputs.key("inputs"),
-            TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result"),
+        return chain(AlloyRecipeJS.class, AlloyRecipeJS::new,
+            null,
+            later(TinkerComponents.ALLOY_INGREDIENT.asArray().key("inputs").noBuilders(), TinkerComponents.FLUID_OUTPUT_REQUIRED.key("result").noBuilders()),
             TinkerComponents.POSITIVE_INT.key("temperature").defaultOptional()
         );
     }

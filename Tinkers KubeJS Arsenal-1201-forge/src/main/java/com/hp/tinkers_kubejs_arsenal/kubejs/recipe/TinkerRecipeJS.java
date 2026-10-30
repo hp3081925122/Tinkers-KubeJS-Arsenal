@@ -5,7 +5,10 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.component.TagJson;
 import dev.latvian.mods.kubejs.recipe.RecipeExceptionJS;
 import dev.latvian.mods.kubejs.recipe.RecipeJS;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponentValue;
+import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerComponents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.schema.TinkerRecipeSchemas;
 import java.lang.reflect.Array;
+import java.util.Map;
 import net.minecraft.world.level.material.Fluid;
 import slimeknights.mantle.recipe.ingredient.FluidIngredient;
 import slimeknights.tconstruct.library.recipe.casting.ICastingRecipe;
@@ -14,9 +17,19 @@ import slimeknights.tconstruct.library.materials.definition.MaterialId;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 
 public class TinkerRecipeJS extends RecipeJS {
+    private static final Map<String, String> HINTS = Map.of(
+        "inputs", "input(...)",
+        "levels", "level(...)",
+        "rate", "result(fluid, amount, rate)"
+    );
+
     @Override
-    public void afterLoaded() {
-        super.afterLoaded();
+    public void serialize() {
+        for (String name : TinkerRecipeSchemas.chainedKeys(this.type.schemaType.schema)) {
+            if (this.value(name) == null) {
+                throw new RecipeExceptionJS("Recipe " + this.id + " (" + this.getType() + ") is missing '" + name + "'; set it with ." + HINTS.getOrDefault(name, name + "(...)"));
+            }
+        }
         switch (this.getType().getPath()) {
             case "alloy" -> {
                 Object inputs = this.value("inputs");
@@ -38,7 +51,7 @@ public class TinkerRecipeJS extends RecipeJS {
                     throw new RecipeExceptionJS("Item part builder " + this.id + " requires a positive cost when material is defined");
                 }
             }
-            case "modifier", "swappable_modifier" -> requireArray("inputs", 1);
+            case "modifier" -> requireArray("inputs", 1);
             case "multilevel_modifier" -> {
                 requireArray("levels", 1);
                 Object inputs = this.value("inputs");
@@ -58,13 +71,16 @@ public class TinkerRecipeJS extends RecipeJS {
                     if (index < 0) throw new RecipeExceptionJS("Recipe " + this.id + " has a negative index");
                 }
             }
+            case "swappable_modifier" -> {
+                requireArray("inputs", 1);
+                TinkerComponents.SwappableResult result = this.value("result");
+                if (result == null || result.value() == null) {
+                    throw new RecipeExceptionJS("Swappable modifier " + this.id + " requires .variant(value)");
+                }
+            }
             default -> {
             }
         }
-    }
-
-    @Override
-    public void serialize() {
         switch (this.getType().getPath()) {
             case "melting", "ore_melting", "damagable_melting" -> this.applyMeltingDefaults();
             case "casting_basin", "casting_table", "basin_duplication", "table_duplication", "retextured_casting_basin", "retextured_casting_table" ->
@@ -78,12 +94,6 @@ public class TinkerRecipeJS extends RecipeJS {
     }
 
     private void applyMeltingDefaults() {
-        if (this.value("result") == null) {
-            throw new RecipeExceptionJS("Melting recipe " + this.id + " (" + this.getType() + ") requires .result(fluid, amount)");
-        }
-        if (this.getAllValueMap().containsKey("rate") && this.value("rate") == null) {
-            throw new RecipeExceptionJS("Ore melting recipe " + this.id + " requires .result(fluid, amount, rate)");
-        }
         Integer temperature = this.value("temperature");
         boolean missingTime = this.value("time") == null;
         if (temperature != null && !missingTime) {
@@ -151,8 +161,22 @@ public class TinkerRecipeJS extends RecipeJS {
         return holder.key.component.write(this, holder.value);
     }
 
+    protected boolean has(String name) {
+        return this.getAllValueMap().containsKey(name);
+    }
+
     protected void read(String name, Object from) {
-        this.readValue(this.getAllValueMap().get(name), from);
+        RecipeComponentValue<?> holder = this.getAllValueMap().get(name);
+        if (holder == null) {
+            throw new RecipeExceptionJS("Recipe type " + this.getType() + " has no '" + name + "' field");
+        }
+        this.readValue(holder, from);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> void store(String name, T value) {
+        RecipeComponentValue<T> holder = (RecipeComponentValue<T>) this.getAllValueMap().get(name);
+        this.setValue(holder.key, value);
     }
 
     private <T> void readValue(RecipeComponentValue<T> holder, Object from) {

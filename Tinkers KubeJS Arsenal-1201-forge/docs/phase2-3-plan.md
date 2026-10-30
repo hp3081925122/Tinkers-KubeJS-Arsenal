@@ -35,6 +35,7 @@
 | R8 | 优先复用第 4 节列出的现有组件，不要另写一套功能相同的组件 | |
 | R9 | 交付时必须附交付说明（第 8 节） | 第一轮没有附 |
 | R10 | 遵守用户规则：Java 不写注释；文件用 UTF-8；可选依赖不写入 `mods.toml`；每个阶段完成后运行 `gradlew build`（证书报错时加 `-Dnet.minecraftforge.gradle.check.certs=false`） | |
+| R11 | KubeJS 写法必须遵守 [kubejs-api-style.md](kubejs-api-style.md)（链式风格，只有一种写法）。该规范第 3 节列出的待改造配方，都要按它改造 | 2026年10月30日 用户要求 |
 
 ## 3. 本期范围
 
