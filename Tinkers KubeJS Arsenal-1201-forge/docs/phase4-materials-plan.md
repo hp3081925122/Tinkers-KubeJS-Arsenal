@@ -91,6 +91,8 @@
 
 结论：不能用 `generateDataJsons`，因为它拿到的是上一次的数据；也不能在 `onServerReload` 里注册 Java 监听，因为下次重载第 2 步会把它清掉，而且时机已经晚于第 3 步。
 
+> **实施后更正（2026年10月30日）：** MixinExtras 在运行环境中版本不兼容，实际实现改为 `@ModifyArg` + `@Inject(shift = AFTER)`。并且 KubeJS 在没有监听者时不会调用 `afterPosted`，需要手动补调。详见 [delivery-phase4a.md](delivery-phase4a.md) 的审核修复记录。
+
 **做法：** 写一个 Mixin，注入 `dev.latvian.mods.kubejs.server.ServerScriptManager#wrapResourceManager`，位置在第 3 步发布 `highPriorityData` 之后、`ConsoleJS.SERVER.info("Scripts loaded")` 之前（`remap = false`）。在注入点：
 
 - 用 MixinExtras 的 `@Local` 拿到 high 优先级的那个 `VirtualKubeJSDataPack`（同一个方法里有两个同类型局部变量，必须用 `ordinal` 区分 high 和 low；开发环境里有 `mixinextras-forge 0.4.1`，实施前要先确认它在编译类路径上，不在就改用 `LocalCapture`）；

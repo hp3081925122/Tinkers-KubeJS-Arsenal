@@ -4,8 +4,21 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.schema.TinkerRecipeSchemas;
 import dev.latvian.mods.kubejs.KubeJSPlugin;
 import dev.latvian.mods.kubejs.recipe.schema.RegisterRecipeSchemasEvent;
 import dev.latvian.mods.kubejs.script.BindingsEvent;
+import dev.latvian.mods.kubejs.client.LangEventJS;
+import dev.latvian.mods.kubejs.generator.AssetJsonGenerator;
+import com.google.gson.JsonObject;
+import net.minecraft.resources.ResourceLocation;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialAssetEventJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.TinkerMaterialEvents;
 
 public class ArsenalKubeJSPlugin extends KubeJSPlugin {
+    private MaterialAssetEventJS assets;
+
+    @Override
+    public void registerEvents() { TinkerMaterialEvents.register(); }
+
     @Override
     public void registerRecipeSchemas(RegisterRecipeSchemasEvent event) {
         event.namespace("tconstruct")
@@ -81,6 +94,37 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
     public void registerBindings(BindingsEvent event) {
         event.add("TinkerFluids", TinkerFluids.class);
         event.add("TinkerRecipes", TinkerRecipes.class);
+        event.add("TinkerMaterialEvents", TinkerMaterialEvents.wrapper(event.getType()));
+    }
+
+    @Override
+    public void generateAssetJsons(AssetJsonGenerator generator) {
+        this.assets = new MaterialAssetEventJS();
+        TinkerMaterialEvents.ASSETS.post(this.assets);
+        Map<String, JsonObject> colors = new LinkedHashMap<>();
+        for (MaterialAssetEventJS.MaterialAsset asset : this.assets.getMaterials().values()) {
+            ResourceLocation id = asset.id();
+            generator.json(new ResourceLocation(id.getNamespace(), "tinkering/materials/" + id.getPath()), asset.render());
+            if (asset.textColor() != null) {
+                colors.computeIfAbsent(id.getNamespace(), namespace -> new JsonObject()).addProperty("material." + id.getNamespace() + "." + id.getPath(), asset.textColor());
+            }
+        }
+        colors.forEach((namespace, json) -> generator.json(new ResourceLocation(namespace, "mantle/colors"), json));
+    }
+
+    @Override
+    public void generateLang(LangEventJS event) {
+        if (this.assets == null) {
+            return;
+        }
+        for (MaterialAssetEventJS.MaterialAsset asset : this.assets.getMaterials().values()) {
+            ResourceLocation id = asset.id();
+            String base = "material." + id.getNamespace() + "." + id.getPath();
+            asset.names().forEach((lang, text) -> event.map.put(new LangEventJS.Key(id.getNamespace(), lang, base), text));
+            asset.flavors().forEach((lang, text) -> event.map.put(new LangEventJS.Key(id.getNamespace(), lang, base + ".flavor"), text));
+            asset.encyclopedia().forEach((lang, text) -> event.map.put(new LangEventJS.Key(id.getNamespace(), lang, base + ".encyclopedia"), text));
+        }
+        this.assets = null;
     }
 }
 
