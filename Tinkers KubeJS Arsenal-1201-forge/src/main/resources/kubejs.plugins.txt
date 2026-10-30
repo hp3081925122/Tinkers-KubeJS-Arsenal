@@ -1,1 +1,2 @@
 com.hp.tinkers_kubejs_arsenal.kubejs.ArsenalKubeJSPlugin tconstruct
+com.hp.tinkers_kubejs_arsenal.kubejs.probe.ArsenalProbeJSPlugin tconstruct probejs
