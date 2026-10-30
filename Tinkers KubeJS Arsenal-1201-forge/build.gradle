@@ -1,0 +1,139 @@
+// 当前文件只保留最小的 Forge 开发、构建和运行配置。
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+
+repositories {
+    maven {
+        url = 'https://www.cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+}
+
+version = project.mod_version
+group = project.mod_group_id
+
+base {
+    archivesName = "${project.mod_id}-${project.minecraft_version}-forge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: project.mapping_channel, version: project.mapping_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+
+            mods {
+                "${project.mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            args '--nogui'
+        }
+
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            workingDirectory project.file('run-data')
+            args '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+    // 匠魂附属的核心开发依赖。
+    implementation fg.deobf("curse.maven:mantle-74924:${project.mantle_curseforge_file_id}")
+    implementation fg.deobf("curse.maven:tinkers-construct-74072:${project.tconstruct_curseforge_file_id}")
+    // KubeJS API 在编译期可见，运行时由测试环境加载。
+    compileOnly fg.deobf("curse.maven:kubejs-238086:${project.kubejs_curseforge_file_id}")
+    runtimeOnly fg.deobf("curse.maven:kubejs-238086:${project.kubejs_curseforge_file_id}")
+    compileOnly fg.deobf("curse.maven:rhino-416294:${project.rhino_curseforge_file_id}")
+    runtimeOnly fg.deobf("curse.maven:rhino-416294:${project.rhino_curseforge_file_id}")
+    runtimeOnly fg.deobf("curse.maven:architectury-api-419699:${project.architectury_curseforge_file_id}")
+    // ProbeJS 仅作可选的补全支持，不写入 mods.toml，发布时不强制依赖。
+    compileOnly fg.deobf("curse.maven:probejs-585406:${project.probejs_curseforge_file_id}")
+    runtimeOnly fg.deobf("curse.maven:probejs-585406:${project.probejs_curseforge_file_id}")
+    // 材料扩展参考依赖，仅用于开发环境兼容性验证。
+    runtimeOnly fg.deobf("curse.maven:tinkers-reforged-376876:${project.tinkers_reforged_curseforge_file_id}")
+    implementation fg.deobf("curse.maven:jei-238222:8778011")
+    implementation fg.deobf("curse.maven:jade-324717:8479276")
+    // 开发环境加入 Advanced Loot Info，查看战利品表和村民交易信息。
+    implementation fg.deobf("curse.maven:advanced-loot-info-1205426:7451552")
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    def replaceProperties = [
+            minecraft_version: project.minecraft_version,
+            minecraft_version_range: project.minecraft_version_range,
+            forge_version: project.forge_version,
+            forge_version_range: project.forge_version_range,
+            loader_version_range: project.loader_version_range,
+            mod_id: project.mod_id,
+            mod_name: project.mod_name,
+            mod_license: project.mod_license,
+            mod_version: project.mod_version,
+            mod_authors: project.mod_authors,
+            mod_description: project.mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title': project.mod_id,
+                'Specification-Vendor': project.mod_authors,
+                'Specification-Version': '1',
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.jar.archiveVersion,
+                'Implementation-Vendor': project.mod_authors
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
