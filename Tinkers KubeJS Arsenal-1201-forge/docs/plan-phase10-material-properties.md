@@ -294,3 +294,17 @@ ArsenalMaterialEvents.data(event => {
 **未做（后续阶段）：** 部件物品自身的提示框显示部件加成。
 
 **验证：** 两个项目都执行了 `gradlew build`，均通过；未做游戏内测试。
+
+## 10. 补充修改（2026年10月31日）
+
+- **部件提示框：** HPTlib 新增 `MaterialPropertiesTooltip`，只在客户端注册，监听 `ItemTooltipEvent`。
+  - 对所有 `IMaterialItem`：材料有三围时，显示"硬度 · 密度 · 韧性"一行。
+  - 部件物品有部件公式时，再列出"部件加成"：属性按运算方式着色显示，特性显示名称和等级。数值按部件倍率 1 显示。
+- **报错文案：** 部件公式里特性报错时，前缀改为 `Part formula <部件>`，之前误用了 `Stat formula`。
+- **弱引用：** `HptMaterialProperties` 记录上次加载用的 `ResourceManager` 时改用 `WeakReference`，不再持有已关闭的资源管理器。
+- **同步日志：** 客户端收到同步包时输出英文日志 `Received synced material properties ...`，供测试取证。
+- **许可证：** 本模组的 `LICENSE.txt` 改为 MIT 文本，和 `mods.toml`、CF 声明一致。
+- **HPTlib 依赖：** 删除 `mods.toml` 中的 JEI 可选依赖，依据是"可选依赖不写入 mods.toml"的规则。
+- **示例修正：** 匠魂镐头部件的 ID 是 `tconstruct:pick_head`，Wiki 示例已改正。
+- **测试文档：** `docs/test-phase10-material-properties.md`。
+

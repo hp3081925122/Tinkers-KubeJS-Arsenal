@@ -644,12 +644,18 @@ public class MaterialDataEventJS extends EventJS {
     public static class StatFormulaDefinition {
         private static final Set<String> ROUNDING = Set.of("none", "nearest", "floor", "ceil");
         private final MaterialStatsId id;
+        private final String label;
         private final JsonObject fields = new JsonObject();
         private final JsonArray traits = new JsonArray();
         private boolean invalid;
 
         private StatFormulaDefinition(MaterialStatsId id) {
+            this(id, "Stat formula " + id);
+        }
+
+        private StatFormulaDefinition(MaterialStatsId id, String label) {
             this.id = id;
+            this.label = label;
         }
 
         public StatFormulaDefinition field(String field, Map<String, Object> coefficients) {
@@ -752,7 +758,7 @@ public class MaterialDataEventJS extends EventJS {
 
         private IllegalArgumentException fail(String message) {
             this.invalid = true;
-            return new IllegalArgumentException("Stat formula " + this.id + ": " + message);
+            return new IllegalArgumentException(this.label + ": " + message);
         }
     }
 
@@ -765,7 +771,7 @@ public class MaterialDataEventJS extends EventJS {
 
         private PartFormulaDefinition(ResourceLocation id) {
             this.id = id;
-            this.traits = new StatFormulaDefinition(new MaterialStatsId(id));
+            this.traits = new StatFormulaDefinition(new MaterialStatsId(id), "Part formula " + id);
         }
 
         public PartFormulaDefinition stat(String toolStat, Map<String, Object> coefficients) {
