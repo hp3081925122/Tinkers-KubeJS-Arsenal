@@ -26,6 +26,7 @@ public class MaterialDataEventJS extends EventJS {
 
     private final Map<ResourceLocation, MaterialDefinition> materials = new LinkedHashMap<>();
     private final Map<ResourceLocation, MaterialDefinition> extensions = new LinkedHashMap<>();
+    private final Map<MaterialStatsId, StatFormulaDefinition> formulas = new LinkedHashMap<>();
 
     public MaterialDefinition create(String id) {
         ResourceLocation key = new ResourceLocation(id);
@@ -47,6 +48,20 @@ public class MaterialDataEventJS extends EventJS {
         return material;
     }
 
+    public StatFormulaDefinition statFormula(String formulaStat) {
+        MaterialStatsId key = new MaterialStatsId(formulaStat.contains(":") ? formulaStat : "tconstruct:" + formulaStat);
+        if (this.formulas.containsKey(key)) {
+            throw new IllegalArgumentException("Duplicate stat formula: " + key);
+        }
+        StatFormulaDefinition formula = new StatFormulaDefinition(key);
+        this.formulas.put(key, formula);
+        return formula;
+    }
+
+    public Map<MaterialStatsId, StatFormulaDefinition> getFormulas() {
+        return this.formulas;
+    }
+
     public Map<ResourceLocation, MaterialDefinition> getExtensions() {
         return this.extensions;
     }
@@ -62,6 +77,8 @@ public class MaterialDataEventJS extends EventJS {
         private final JsonArray defaultTraits = new JsonArray();
         private final JsonObject perStat = new JsonObject();
         private final JsonObject render = new JsonObject();
+        private JsonObject properties;
+        private final JsonArray excludedFormulas = new JsonArray();
         private final Map<String, String> names = new LinkedHashMap<>();
         private final Map<String, String> flavors = new LinkedHashMap<>();
         private final Map<String, String> encyclopedia = new LinkedHashMap<>();
@@ -233,6 +250,44 @@ public class MaterialDataEventJS extends EventJS {
             values.forEach((key, value) -> json.add(key, dev.latvian.mods.kubejs.util.JsonIO.of(value)));
             this.stats.add(stat.toString(), json);
             return this;
+        }
+
+        public MaterialDefinition properties(double hardness, double density, double toughness) {
+            return this.properties(values("hardness", hardness, "density", density, "toughness", toughness));
+        }
+
+        public MaterialDefinition properties(Map<String, Object> properties) {
+            JsonObject json = this.properties == null ? new JsonObject() : this.properties;
+            for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                if ("exclude".equals(entry.getKey())) {
+                    throw this.fail("'exclude' is reserved; use .excludeFormula(...) instead");
+                }
+                if (!(entry.getValue() instanceof Number number)) {
+                    throw this.fail("Material property '" + entry.getKey() + "' must be a number");
+                }
+                json.addProperty(entry.getKey(), number.doubleValue());
+            }
+            this.properties = json;
+            return this;
+        }
+
+        public MaterialDefinition excludeFormula(String... excludedStats) {
+            for (String stat : excludedStats) {
+                this.excludedFormulas.add(new ResourceLocation(stat.contains(":") ? stat : "tconstruct:" + stat).toString());
+            }
+            return this;
+        }
+
+        public boolean hasProperties() {
+            return this.properties != null;
+        }
+
+        public JsonObject propertiesJson() {
+            JsonObject json = this.properties.deepCopy();
+            if (!this.excludedFormulas.isEmpty()) {
+                json.add("exclude", this.excludedFormulas);
+            }
+            return json;
         }
 
         public MaterialDefinition trait(String modifier) {
@@ -565,6 +620,121 @@ public class MaterialDataEventJS extends EventJS {
             json.addProperty("name", modifier);
             json.addProperty("level", level);
             return json;
+        }
+    }
+
+    public static class StatFormulaDefinition {
+        private static final Set<String> ROUNDING = Set.of("none", "nearest", "floor", "ceil");
+        private final MaterialStatsId id;
+        private final JsonObject fields = new JsonObject();
+        private final JsonArray traits = new JsonArray();
+        private boolean invalid;
+
+        private StatFormulaDefinition(MaterialStatsId id) {
+            this.id = id;
+        }
+
+        public StatFormulaDefinition field(String field, Map<String, Object> coefficients) {
+            this.fields.add(field, this.linear(field, coefficients));
+            return this;
+        }
+
+        public StatFormulaDefinition field(String field, Map<String, Object> coefficients, String round) {
+            JsonObject json = this.linear(field, coefficients);
+            if (!ROUNDING.contains(round)) {
+                throw this.fail("Field '" + field + "' uses unknown round mode '" + round + "', allowed: " + ROUNDING);
+            }
+            json.addProperty("round", round);
+            this.fields.add(field, json);
+            return this;
+        }
+
+        public StatFormulaDefinition levels(String field, Map<String, Object> coefficients, List<List<Object>> levels) {
+            JsonObject json = new JsonObject();
+            json.add("score", this.linear(field, coefficients));
+            JsonArray array = new JsonArray();
+            for (List<Object> level : levels) {
+                if (level.size() != 2 || !(level.get(0) instanceof Number threshold)) {
+                    throw this.fail("Field '" + field + "' levels must be [threshold, value] pairs");
+                }
+                JsonArray pair = new JsonArray();
+                pair.add(threshold.doubleValue());
+                pair.add(JsonIO.of(level.get(1)));
+                array.add(pair);
+            }
+            if (array.isEmpty()) {
+                throw this.fail("Field '" + field + "' needs at least one level");
+            }
+            json.add("levels", array);
+            this.fields.add(field, json);
+            return this;
+        }
+
+        public StatFormulaDefinition tiers(Map<String, Object> coefficients, List<List<Object>> levels) {
+            for (List<Object> level : levels) {
+                if (level.size() == 2 && (!(level.get(1) instanceof CharSequence text) || ResourceLocation.tryParse(text.toString()) == null)) {
+                    throw this.fail("Mining tier levels must use harvest tier ids such as minecraft:iron");
+                }
+            }
+            return this.levels("mining_tier", coefficients, levels);
+        }
+
+        public StatFormulaDefinition trait(String modifier, Map<String, Object> coefficients) {
+            return this.trait(modifier, coefficients, Integer.MAX_VALUE);
+        }
+
+        public StatFormulaDefinition trait(String modifier, Map<String, Object> coefficients, int max) {
+            if (max < 1) {
+                throw this.fail("Trait " + modifier + " max level must be at least 1");
+            }
+            JsonObject json = new JsonObject();
+            json.addProperty("modifier", new ResourceLocation(modifier).toString());
+            json.add("level", this.linear("trait " + modifier, coefficients));
+            if (max != Integer.MAX_VALUE) {
+                json.addProperty("max", max);
+            }
+            this.traits.add(json);
+            return this;
+        }
+
+        public MaterialStatsId id() {
+            return this.id;
+        }
+
+        public boolean isInvalid() {
+            return this.invalid;
+        }
+
+        public JsonObject json() {
+            JsonObject json = new JsonObject();
+            json.add("fields", this.fields);
+            if (!this.traits.isEmpty()) {
+                json.add("traits", this.traits);
+            }
+            return json;
+        }
+
+        private JsonObject linear(String field, Map<String, Object> coefficients) {
+            JsonObject json = new JsonObject();
+            for (Map.Entry<String, Object> entry : coefficients.entrySet()) {
+                if ("round".equals(entry.getKey())) {
+                    if (!(entry.getValue() instanceof CharSequence text) || !ROUNDING.contains(text.toString())) {
+                        throw this.fail("'" + field + "' uses unknown round mode '" + entry.getValue() + "', allowed: " + ROUNDING);
+                    }
+                    json.addProperty("round", text.toString());
+                    continue;
+                }
+                if (!(entry.getValue() instanceof Number number)) {
+                    throw this.fail("'" + field + "' coefficient '" + entry.getKey() + "' must be a number");
+                }
+                json.addProperty(entry.getKey(), number.doubleValue());
+            }
+            return json;
+        }
+
+        private IllegalArgumentException fail(String message) {
+            this.invalid = true;
+            return new IllegalArgumentException("Stat formula " + this.id + ": " + message);
         }
     }
 }

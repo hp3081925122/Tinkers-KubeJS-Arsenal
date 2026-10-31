@@ -110,6 +110,8 @@ dependencies {
     // 匠魂附属的核心开发依赖。
     implementation fg.deobf("curse.maven:mantle-74924:${project.mantle_curseforge_file_id}")
     implementation fg.deobf("curse.maven:tinkers-construct-74072:${project.tconstruct_curseforge_file_id}")
+    // HPTlib 提供材料三围与属性公式的数据包支持，本模组强制依赖。
+    implementation "org.hp.hptlib:hptlib:${project.hptlib_version}"
     // KubeJS API 在编译期可见，运行时由测试环境加载。
     compileOnly fg.deobf("curse.maven:kubejs-238086:${project.kubejs_curseforge_file_id}")
     runtimeOnly fg.deobf("curse.maven:kubejs-238086:${project.kubejs_curseforge_file_id}")
@@ -143,6 +145,7 @@ tasks.named('processResources', ProcessResources).configure {
             forge_version: project.forge_version,
             forge_version_range: project.forge_version_range,
             loader_version_range: project.loader_version_range,
+            hptlib_version_range: project.hptlib_version_range,
             mod_id: project.mod_id,
             mod_name: project.mod_name,
             mod_license: project.mod_license,

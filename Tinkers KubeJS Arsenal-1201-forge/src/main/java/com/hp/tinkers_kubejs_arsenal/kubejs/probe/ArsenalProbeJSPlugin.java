@@ -52,6 +52,8 @@ import slimeknights.tconstruct.library.tools.part.IToolPart;
 public class ArsenalProbeJSPlugin extends KubeJSPlugin {
     private static final String STAT_GROUPS = "\"tconstruct:melee_harvest\" | \"tconstruct:ranged\" | \"tconstruct:armor\" | \"tconstruct:ammo\"";
     private static final String FALLBACKS = "\"bone\" | \"cloth\" | \"contrast\" | \"crystal\" | \"metal\" | \"metal_contrast\" | \"primitive\" | \"rock\" | \"slime_metal\" | \"slime_wood\" | \"stick\" | \"vine\" | \"wood\" | (string & {})";
+    private static final String PROPERTIES = "{ hardness?: number, density?: number, toughness?: number }";
+    private static final String ROUNDING = "\"none\" | \"nearest\" | \"floor\" | \"ceil\"";
     private static final Map<String, String> PARAM_TYPES = Map.ofEntries(
         Map.entry("fluid", "Special.Fluid | `#${Special.FluidTag}`"),
         Map.entry("rate", "\"none\" | \"metal\" | \"gem\" | \"default\""),
@@ -84,6 +86,13 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
         Map.entry("toolActions", "(\"pickaxe_dig\" | \"axe_dig\" | \"shovel_dig\" | \"hoe_dig\" | \"sword_dig\" | \"shears_dig\" | \"axe_strip\" | \"shovel_flatten\" | \"hoe_till\" | \"sword_sweep\" | \"shield_block\" | (string & {}))[]"),
         Map.entry("blockTag", "Special.BlockTag | `#${Special.BlockTag}`"),
         Map.entry("options", "Record<string, any>"),
+        Map.entry("formulaStat", "\"head\" | \"handle\" | \"limb\" | \"grip\" | \"plating_helmet\" | \"plating_chestplate\" | \"plating_leggings\" | \"plating_boots\" | \"plating_shield\" | Special." + TinkerTypes.MATERIAL_STAT_NAME + " | (string & {})"),
+        Map.entry("excludedStats", "(Special." + TinkerTypes.MATERIAL_STAT_NAME + " | (string & {}))[]"),
+        Map.entry("properties", PROPERTIES + " & Record<string, number>"),
+        Map.entry("coefficients", "{ base?: number, min?: number, max?: number, round?: " + ROUNDING + " } & " + PROPERTIES + " & Record<string, number | string>"),
+        Map.entry("round", ROUNDING),
+        Map.entry("field", "\"durability\" | \"melee_attack\" | \"melee_damage\" | \"melee_speed\" | \"mining_speed\" | \"mining_tier\" | \"accuracy\" | \"draw_speed\" | \"velocity\" | \"armor\" | \"toughness\" | \"knockback_resistance\" | (string & {})"),
+        Map.entry("levels", "[number, any][]"),
         Map.entry("modifiable", "(\"aoe\" | \"bonus_slots\" | \"broad\" | \"durability\" | \"harvest\" | \"harvest/primary\" | \"harvest/stone\" | \"held\" | \"interactable\" | \"interactable/dual\" | \"interactable/left\" | \"interactable/right\" | \"melee\" | \"melee/parry\" | \"melee/primary\" | \"melee/sword\" | \"melee/weapon\" | \"multipart\" | \"small\" | \"special\" | \"unsalvageable\" | \"unswappable\" | (string & {}))[]")
     );
 
@@ -103,7 +112,7 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
             doc.specialType(TinkerTypes.MODIFIABLE_NAME, literals(items(item -> item instanceof IModifiable), false));
             doc.specialType(TinkerTypes.TOOL_STAT_NAME, literals(ToolStats.getAllStats().stream().map(stat -> stat.getName().toString()), true));
             doc.specialType(TinkerTypes.ATTRIBUTE_NAME, literals(ForgeRegistries.ATTRIBUTES.getKeys().stream().map(Object::toString), true));
-            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class, ArsenalToolBuilder.class, ArsenalArmorSetBuilder.class, ArsenalArmorSetBuilder.Event.class, ArsenalPartBuilder.class, com.hp.tinkers_kubejs_arsenal.kubejs.material.StatTypeEventJS.StatTypeDefinition.class, ToolDataEventJS.ToolDefinitionJS.class)) {
+            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialDataEventJS.StatFormulaDefinition.class, MaterialDataEventJS.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class, ArsenalToolBuilder.class, ArsenalArmorSetBuilder.class, ArsenalArmorSetBuilder.Event.class, ArsenalPartBuilder.class, com.hp.tinkers_kubejs_arsenal.kubejs.material.StatTypeEventJS.StatTypeDefinition.class, ToolDataEventJS.ToolDefinitionJS.class)) {
                 doc.transformDocument(recipeClass, ArsenalProbeJSPlugin::describeParams);
             }
             return null;

@@ -10,3 +10,10 @@ pluginManagement {
 }
 
 rootProject.name = 'tinkers_kubejs_arsenal'
+
+// 关联本地 HPTlib Composite Build，材料三围与属性公式由 HPTlib 提供。
+includeBuild('../../HPTlib/HPTlib-1201-forge') {
+    dependencySubstitution {
+        substitute module('org.hp.hptlib:hptlib') using project(':')
+    }
+}

@@ -1,6 +1,7 @@
 package com.hp.tinkers_kubejs_arsenal.mixin;
 
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialDataEventJS;
+import org.hp.hptlib.material.HptMaterialProperties;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalModifierEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ModifierDataEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
@@ -51,7 +52,7 @@ public abstract class ServerScriptManagerMixin {
                     ConsoleJS.SERVER.error("Material " + id + " was not generated because its definition has errors");
                     continue;
                 }
-                if (material.stats().size() == 0) {
+                if (material.stats().size() == 0 && !material.hasProperties()) {
                     ConsoleJS.SERVER.warn("Material " + id + " has no stats, so no tool parts can be made from it");
                 }
                 add(pack, id, "definition", material.definition());
@@ -62,6 +63,9 @@ public abstract class ServerScriptManagerMixin {
                 }
                 if (material.hasTraits()) {
                     add(pack, id, "traits", material.traits());
+                }
+                if (material.hasProperties()) {
+                    pack.addJson(new ResourceLocation(id.getNamespace(), HptMaterialProperties.PROPERTIES_FOLDER + "/" + id.getPath()), material.propertiesJson());
                 }
                 added = true;
             }
@@ -80,6 +84,18 @@ public abstract class ServerScriptManagerMixin {
                     add(pack, extension.id(), "traits", extension.traits());
                     added = true;
                 }
+                if (extension.hasProperties()) {
+                    pack.addJson(new ResourceLocation(extension.id().getNamespace(), HptMaterialProperties.PROPERTIES_FOLDER + "/" + extension.id().getPath()), extension.propertiesJson());
+                    added = true;
+                }
+            }
+            for (MaterialDataEventJS.StatFormulaDefinition formula : data.getFormulas().values()) {
+                if (formula.isInvalid()) {
+                    ConsoleJS.SERVER.error("Stat formula " + formula.id() + " was not generated because it has errors");
+                    continue;
+                }
+                pack.addJson(new ResourceLocation(formula.id().getNamespace(), HptMaterialProperties.FORMULAS_FOLDER + "/" + formula.id().getPath()), formula.json());
+                added = true;
             }
             ModifierDataEventJS modifiers = new ModifierDataEventJS();
             ArsenalModifierEvents.DATA.post(modifiers);
