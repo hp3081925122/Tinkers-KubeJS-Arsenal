@@ -298,7 +298,7 @@ ArsenalMaterialEvents.data(event => {
 ## 10. 补充修改（2026年10月31日）
 
 - **部件提示框：** HPTlib 新增 `MaterialPropertiesTooltip`，只在客户端注册，监听 `ItemTooltipEvent`。
-  - 对所有 `IMaterialItem`：材料有三围时，显示"硬度 · 密度 · 韧性"一行。
+  - 不显示三围数值（按用户要求已去掉三围行）。
   - 部件物品有部件公式时，再列出"部件加成"：属性按运算方式着色显示，特性显示名称和等级。数值按部件倍率 1 显示。
 - **报错文案：** 部件公式里特性报错时，前缀改为 `Part formula <部件>`，之前误用了 `Stat formula`。
 - **弱引用：** `HptMaterialProperties` 记录上次加载用的 `ResourceManager` 时改用 `WeakReference`，不再持有已关闭的资源管理器。

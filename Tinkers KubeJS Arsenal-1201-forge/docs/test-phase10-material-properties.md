@@ -245,7 +245,7 @@ ArsenalMaterialEvents.data(event => {
 | D9 | 部件加成：特性 | A + C | 读镐 A、镐 B 的 `getModifierLevel(tconstruct:lustrous)` 和 `getModifierLevel(tconstruct:reinforced)` | A：lustrous 为 2，reinforced 为 2；B：lustrous 为 0，reinforced 为 2 |
 | D10 | 只对对应部件生效 | A | 用同样的 mythril 材料造一把宽斧（`tconstruct:broad_axe`）或手斧（`tconstruct:hand_axe`，部件不含 `pick_head`），读 lustrous 等级 | lustrous 为 0 |
 | D11 | 没有三围的材料不加成 | A | 用木头（`tconstruct:wood`，没有三围）作为镐头材料造镐，在有和没有 `pick_head.json` 两种情况下读攻击 | 两次攻击相同 |
-| D12 | 部件提示框 | B | 执行 `/give @p tconstruct:pick_head{Material:"hpt_test:mythril"}` 和 `/give @p tconstruct:tool_handle{Material:"hpt_test:mythril"}`，悬停截图（中文、英文各一张） | 镐头提示框有"硬度 4 · 密度 5 · 韧性 9"，以及"部件加成："下的攻击 +2、挖掘速度 −10%、光泽 II；手柄只有三围行，没有部件加成 |
+| D12 | 部件提示框 | B | 执行 `/give @p tconstruct:pick_head{Material:"hpt_test:mythril"}` 和 `/give @p tconstruct:tool_handle{Material:"hpt_test:mythril"}`，悬停截图（中文、英文各一张） | 镐头提示框有"部件加成："，下面是攻击 +2、挖掘速度 −10%、光泽 II；两个提示框都**不显示**三围；手柄提示框没有部件加成 |
 | D13 | 工具提示框与工匠站预览 | B | 在工匠站用 mythril 部件组装镐子，截图预览结果；拿出成品后截图提示框 | 预览和成品的攻击、挖掘速度一致，都等于 D8 中镐 A 的值 |
 | D14 | /reload 生效 | A | 把 `data/hpt_test/tinkering/material_properties/mythril.json` 的 hardness 改为 8，`/reload` 后重读 mythril 的 head | `melee_attack` 为 8；`mining_speed` 为 2 + 4 − 1 = 5；`mining_tier` 为 `minecraft:iron`。测完改回 4 |
 | D15 | 已有工具重算 | C | D14 改完之后，把 D8 造出的镐 A 放进背包，退出并重新进入世界，再用 `/data get` 读它的攻击 | 重新进入后攻击按 hardness 8 重算（部件加成 +4，头部攻击 8）。报告中记录 `/reload` 之后、重进之前的值作为对照 |
