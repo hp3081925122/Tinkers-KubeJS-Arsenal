@@ -265,3 +265,32 @@ ArsenalMaterialEvents.data(event => {
   - `ServerScriptManagerMixin` 负责把这些内容写成两类数据包 JSON。
   - ProbeJS 新增以下参数的类型：`formulaStat`、`excludedStats`、`properties`、`coefficients`、`round`、`field`、`levels`。
 - **验证：** 两个项目都执行了 `gradlew build`，均通过；按用户规则，未做游戏内测试。
+
+## 9. 部件公式（追加）
+
+部件公式是在属性类型公式之上，按具体部件额外加成。
+
+**注入点：**
+- 在 `MaterialStatsModule.addToolStats` 与 `addTraits` 的 TAIL 注入。
+- 只处理实现了 `ToolPartsHook` 的模块（即 `PartStatsModule`）。
+- 对每个下标 `i`，取出部件物品 `i` 和材料 `i`：
+  - 部件物品有部件公式、且材料有三围时，才计算加成；
+  - 数值乘以 `scales[i]`，再按 `base`/`add`/`percent`/`multiply` 写入 `ModifierStatsBuilder`；
+  - 特性写入 `ModifierBuilder`。
+- 3.11 与 3.12 中两个方法的签名一致，`scales` 字段都是包级可见的 `final float[]`。
+
+**数据：**
+- 路径为 `tinkering/part_formulas/<部件物品 ID>.json`，格式见 HPTlib README。
+- 与三围在同一次 `load` 中读取（由 stats 管理器的 `finishLoad` 触发）。
+
+**客户端同步：**
+- 原因：`ToolStack.verifyTag` 在物品 NBT 加载时会调用 `rebuildStats`，客户端收到物品时也会重算，所以客户端必须有三围和部件公式。
+- 做法：HPTlib 新增 `hptlib:material_properties` 通道，在 `OnDatapackSyncEvent` 时发送三围和部件公式的原始 JSON，客户端收到后重新解析。
+- 副作用：已有工具不会在 `/reload` 后立刻更新，要等重新加载 NBT（重进世界、区块重载）时才会重算。
+
+**本模组：**
+- `event.partFormula(部件物品)`，可链式调用 `.stat(工具属性[, 运算方式], 系数)` 和 `.trait(词条, 系数[, 上限])`，生成部件公式 JSON。
+
+**未做（后续阶段）：** 部件物品自身的提示框显示部件加成。
+
+**验证：** 两个项目都执行了 `gradlew build`，均通过；未做游戏内测试。

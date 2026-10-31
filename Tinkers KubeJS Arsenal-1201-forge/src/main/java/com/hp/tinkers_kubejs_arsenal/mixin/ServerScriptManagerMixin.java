@@ -97,6 +97,14 @@ public abstract class ServerScriptManagerMixin {
                 pack.addJson(new ResourceLocation(formula.id().getNamespace(), HptMaterialProperties.FORMULAS_FOLDER + "/" + formula.id().getPath()), formula.json());
                 added = true;
             }
+            for (MaterialDataEventJS.PartFormulaDefinition formula : data.getPartFormulas().values()) {
+                if (formula.isInvalid()) {
+                    ConsoleJS.SERVER.error("Part formula " + formula.id() + " was not generated because it has errors");
+                    continue;
+                }
+                pack.addJson(new ResourceLocation(formula.id().getNamespace(), HptMaterialProperties.PART_FORMULAS_FOLDER + "/" + formula.id().getPath()), formula.json());
+                added = true;
+            }
             ModifierDataEventJS modifiers = new ModifierDataEventJS();
             ArsenalModifierEvents.DATA.post(modifiers);
             for (ModifierDataEventJS.ModifierDefinition modifier : modifiers.getModifiers().values()) {

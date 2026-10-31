@@ -12,6 +12,9 @@ import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import slimeknights.tconstruct.library.materials.stats.MaterialStatsId;
+import slimeknights.tconstruct.library.tools.stat.INumericToolStat;
+import slimeknights.tconstruct.library.tools.stat.ToolStatId;
+import slimeknights.tconstruct.library.tools.stat.ToolStats;
 import java.util.Set;
 
 public class MaterialDataEventJS extends EventJS {
@@ -27,6 +30,7 @@ public class MaterialDataEventJS extends EventJS {
     private final Map<ResourceLocation, MaterialDefinition> materials = new LinkedHashMap<>();
     private final Map<ResourceLocation, MaterialDefinition> extensions = new LinkedHashMap<>();
     private final Map<MaterialStatsId, StatFormulaDefinition> formulas = new LinkedHashMap<>();
+    private final Map<ResourceLocation, PartFormulaDefinition> partFormulas = new LinkedHashMap<>();
 
     public MaterialDefinition create(String id) {
         ResourceLocation key = new ResourceLocation(id);
@@ -60,6 +64,20 @@ public class MaterialDataEventJS extends EventJS {
 
     public Map<MaterialStatsId, StatFormulaDefinition> getFormulas() {
         return this.formulas;
+    }
+
+    public PartFormulaDefinition partFormula(String partItem) {
+        ResourceLocation key = new ResourceLocation(partItem);
+        if (this.partFormulas.containsKey(key)) {
+            throw new IllegalArgumentException("Duplicate part formula: " + key);
+        }
+        PartFormulaDefinition formula = new PartFormulaDefinition(key);
+        this.partFormulas.put(key, formula);
+        return formula;
+    }
+
+    public Map<ResourceLocation, PartFormulaDefinition> getPartFormulas() {
+        return this.partFormulas;
     }
 
     public Map<ResourceLocation, MaterialDefinition> getExtensions() {
@@ -714,7 +732,7 @@ public class MaterialDataEventJS extends EventJS {
             return json;
         }
 
-        private JsonObject linear(String field, Map<String, Object> coefficients) {
+        JsonObject linear(String field, Map<String, Object> coefficients) {
             JsonObject json = new JsonObject();
             for (Map.Entry<String, Object> entry : coefficients.entrySet()) {
                 if ("round".equals(entry.getKey())) {
@@ -735,6 +753,81 @@ public class MaterialDataEventJS extends EventJS {
         private IllegalArgumentException fail(String message) {
             this.invalid = true;
             return new IllegalArgumentException("Stat formula " + this.id + ": " + message);
+        }
+    }
+
+    public static class PartFormulaDefinition {
+        private static final Set<String> OPERATIONS = Set.of("base", "add", "percent", "multiply");
+        private final ResourceLocation id;
+        private final JsonArray stats = new JsonArray();
+        private final StatFormulaDefinition traits;
+        private boolean invalid;
+
+        private PartFormulaDefinition(ResourceLocation id) {
+            this.id = id;
+            this.traits = new StatFormulaDefinition(new MaterialStatsId(id));
+        }
+
+        public PartFormulaDefinition stat(String toolStat, Map<String, Object> coefficients) {
+            return this.stat(toolStat, "add", coefficients);
+        }
+
+        public PartFormulaDefinition stat(String toolStat, String operation, Map<String, Object> coefficients) {
+            ResourceLocation stat = new ResourceLocation(toolStat.contains(":") ? toolStat : "tconstruct:" + toolStat);
+            if (!(ToolStats.getToolStat(new ToolStatId(stat)) instanceof INumericToolStat<?>)) {
+                throw this.fail(stat + " is not a numeric Tinkers tool stat");
+            }
+            if (!OPERATIONS.contains(operation)) {
+                throw this.fail("Unknown operation '" + operation + "' for " + stat + ", allowed: " + OPERATIONS);
+            }
+            JsonObject json = new JsonObject();
+            json.addProperty("stat", stat.toString());
+            json.addProperty("op", operation);
+            try {
+                json.add("value", this.traits.linear(stat.toString(), coefficients));
+            } catch (IllegalArgumentException e) {
+                this.invalid = true;
+                throw e;
+            }
+            this.stats.add(json);
+            return this;
+        }
+
+        public PartFormulaDefinition trait(String modifier, Map<String, Object> coefficients) {
+            return this.trait(modifier, coefficients, Integer.MAX_VALUE);
+        }
+
+        public PartFormulaDefinition trait(String modifier, Map<String, Object> coefficients, int max) {
+            try {
+                this.traits.trait(modifier, coefficients, max);
+            } catch (IllegalArgumentException e) {
+                this.invalid = true;
+                throw e;
+            }
+            return this;
+        }
+
+        public ResourceLocation id() {
+            return this.id;
+        }
+
+        public boolean isInvalid() {
+            return this.invalid || this.traits.isInvalid();
+        }
+
+        public JsonObject json() {
+            JsonObject json = new JsonObject();
+            json.add("stats", this.stats);
+            JsonObject traitJson = this.traits.json();
+            if (traitJson.has("traits")) {
+                json.add("traits", traitJson.get("traits"));
+            }
+            return json;
+        }
+
+        private IllegalArgumentException fail(String message) {
+            this.invalid = true;
+            return new IllegalArgumentException("Part formula " + this.id + ": " + message);
         }
     }
 }
