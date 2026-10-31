@@ -45,7 +45,9 @@
 | S2 | 通过 | 客户端读提示框文字：镐头为“部件加成：/近战伤害：+2/挖掘速度：-10%/光泽 II”，工具手柄没有部件加成，两者都不显示三围，与 D12 一致。 |
 | S3 | 通过 | 同一把 mythril 镐：客户端 NBT attack `7.5600004`，服务端 `/data get` attack `7.5600004`，与 D8 镐 A 相同；客户端提示框“8.56 攻击伤害”（含玩家基础攻击 1）。 |
 | S4 | 通过 | 服务端把 mythril hardness 改成 8 并执行 `reload`：客户端日志再次出现 `Received synced material properties for 4 materials and 1 part formulas`，客户端读到的 hardness 由 4 变为 8；镐头提示框的部件加成近战伤害由 +2 变为 +4（交接文档写“三围更新”，但第十期已改为部件提示框不显示三围，所以改看部件加成）。重载后新造的镐，客户端 NBT 和服务端 `/data get` 都为 attack `15.08`、mining_speed `4.25`、tier `iron`，与 D15 镐 C 相同。 |
-| H1-H3 | 未测 | HPTlib 独立 `runServer` 在 `downloadMCMeta` 阶段发生 SSL 握手失败，未进入游戏。 |
+| H1 | 通过 | HPTlib 独立 `runClient --offline -Dnet.minecraftforge.gradle.check.certs=false` 正常启动（上次 `runServer` 的 SSL 握手失败未再出现）。模组列表只有 `tconstruct, minecraft, self_mcp, forge, mantle, hptlib, jei`（self_mcp 为测试工具，测试时临时加入 HPTlib `build.gradle`，测完已还原）。新建 `h_test` 世界放入 2.1 数据包后 `/reload`：`Loaded material properties for 4 materials, 3 stat formulas and 1 part formulas`、`Applied stat formulas to 11 material stat entries`、`Applied trait formulas to 4 material stat entries`、`Received synced material properties for 4 materials and 1 part formulas`；整份日志没有 ERROR，也没有 KubeJS、`ClassNotFound`、`NoClassDefFound`。 |
+| H2 | 通过 | `/give` 的 mythril 镐 `tic_stats`：attack `7.5600004`、mining_speed `2.5500002`、tier `stone`，与 D8 镐 A 相同；`tic_modifiers` 为 reinforced 2、lustrous 2、pierce 1；提示框“8.56 攻击伤害”。 |
+| H3 | 通过 | 镐头提示框“部件加成：/近战伤害：+2/挖掘速度：-10%/光泽 II”，工具手柄没有部件加成，两者都不显示三围，与 D12 一致。截图 `D:\AI临时文件	kja-phase10-h\h_test-20261031-213704\h3_pick_head.png`、`h3_tool_handle.png`。 |
 
 ## 客户端与 GUI
 
@@ -62,5 +64,6 @@ ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使�
 - D15 复测脚本、运行记录和客户端启动日志：`D:\AI临时文件\tkja-phase10-d15\`；`phase10_gui` 中的测试数据包和 `run/mctest/autojoin.txt` 测完已删除；
 - S 场景脚本、服务端和客户端日志、mctest 运行记录：`D:\AI临时文件\tkja-phase10-s\`；
 - D13 工匠站脚本和 mctest 运行记录：`D:\AI临时文件	kja-phase10-d13\`，`phase10_gui` 中的测试数据包测完已删除；
+- H 场景脚本、客户端日志和截图：`D:\AI临时文件	kja-phase10-h\`，HPTlib 的 `h_test` 世界和 `run/mctest` 测完已删除；
 - 客户端测试临时目录：`D:\AI临时文件\tkja-phase10-full-client\`（本轮未形成 GUI 通过截图）；
 - 当前仓库 `run` 中没有保留第十期临时数据包和脚本。
