@@ -1,5 +1,9 @@
 package com.hp.tinkers_kubejs_arsenal.client;
 
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import net.minecraftforge.registries.ForgeRegistries;
+import slimeknights.tconstruct.library.tools.part.IToolPart;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -76,6 +80,18 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
                 boolean allowAnimated = !json.has("allow_animated") || json.get("allow_animated").getAsBoolean();
                 boolean skipVariants = json.has("skip_variants") && json.get("skip_variants").getAsBoolean();
                 parts.add(new Part(path, new MaterialStatsId(stat.getNamespace(), stat.getPath()), allowAnimated, skipVariants));
+            }
+            for (ArsenalToolBuilder tool : ArsenalToolBuilder.TOOLS.values()) {
+                for (ArsenalToolBuilder.ToolPart part : tool.parts()) {
+                    if (!(ForgeRegistries.ITEMS.getValue(part.item()) instanceof IToolPart toolPart)) {
+                        LOGGER.warn("Tool {} part '{}' uses {}, which is not a Tinkers tool part; no material textures generated", tool.id, part.name(), part.item());
+                        continue;
+                    }
+                    parts.add(new Part(part.texture(), toolPart.getStatType(), true, false));
+                    if (tool.isBroken(part.name())) {
+                        parts.add(new Part(part.texture().withSuffix("_broken"), toolPart.getStatType(), true, false));
+                    }
+                }
             }
             return parts;
         } catch (Exception exception) {

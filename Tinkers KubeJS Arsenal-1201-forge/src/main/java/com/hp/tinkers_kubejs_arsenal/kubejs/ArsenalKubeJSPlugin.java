@@ -14,9 +14,17 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialAssetEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalModifierEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import dev.latvian.mods.kubejs.registry.RegistryInfo;
 
 public class ArsenalKubeJSPlugin extends KubeJSPlugin {
     private MaterialAssetEventJS assets;
+
+    @Override
+    public void init() {
+        RegistryInfo.ITEM.addType(ArsenalToolBuilder.TOOL_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, false));
+        RegistryInfo.ITEM.addType(ArsenalToolBuilder.SWORD_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, true));
+    }
 
     @Override
     public void registerEvents() {

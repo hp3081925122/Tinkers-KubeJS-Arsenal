@@ -6,7 +6,13 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ModifierDataEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialTagEventJS;
 import com.hp.tinkers_kubejs_arsenal.network.TinkerMaterialNetwork;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ToolDataEventJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import dev.latvian.mods.kubejs.bindings.event.ServerEvents;
 import dev.latvian.mods.kubejs.event.EventJS;
 import dev.latvian.mods.kubejs.event.EventResult;
@@ -65,6 +71,39 @@ public abstract class ServerScriptManagerMixin {
                 pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/modifiers/" + id.getPath()), modifier.json());
                 added = true;
             }
+            ToolDataEventJS tools = new ToolDataEventJS();
+            ArsenalToolEvents.DATA.post(tools);
+            Map<String, JsonArray> modifiableTags = new LinkedHashMap<>();
+            for (ToolDataEventJS.ToolDefinitionJS tool : tools.getTools().values()) {
+                ResourceLocation id = tool.id();
+                if (tool.isInvalid()) {
+                    ConsoleJS.SERVER.error("Tool " + id + " was not generated because its definition has errors");
+                    continue;
+                }
+                JsonObject layout;
+                try {
+                    layout = tool.layout();
+                } catch (IllegalArgumentException e) {
+                    ConsoleJS.SERVER.error(e.getMessage());
+                    continue;
+                }
+                pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/tool_definitions/" + id.getPath()), tool.definition());
+                pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/station_layouts/" + id.getPath()), layout);
+                pack.addJson(new ResourceLocation(id.getNamespace(), "recipes/tools/building/" + id.getPath()), tool.recipe());
+                tool.modifiableTags().forEach(tag -> modifiableTags.computeIfAbsent(tag, key -> new JsonArray()).add(id.toString()));
+                added = true;
+            }
+            for (ResourceLocation id : ArsenalToolBuilder.TOOLS.keySet()) {
+                if (!tools.getTools().containsKey(id)) {
+                    ConsoleJS.SERVER.warn("Tool " + id + " is registered in startup_scripts but has no ArsenalToolEvents.data definition, so it has no stats and cannot be built");
+                }
+            }
+            modifiableTags.forEach((tag, values) -> {
+                JsonObject json = new JsonObject();
+                json.addProperty("replace", false);
+                json.add("values", values);
+                pack.addJson(new ResourceLocation("tconstruct", "tags/items/modifiable/" + tag), json);
+            });
             TinkerMaterialNetwork.update(data.getMaterials(), modifiers.getModifiers());
             if (added && !ServerEvents.HIGH_DATA.hasListeners()) {
                 this.tkja$pendingPack = pack;

@@ -1,5 +1,8 @@
 package com.hp.tinkers_kubejs_arsenal.kubejs.probe;
 
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ToolDataEventJS;
+
 import com.google.gson.JsonPrimitive;
 import com.hp.tinkers_kubejs_arsenal.kubejs.component.TinkerTypes;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialAssetEventJS;
@@ -76,7 +79,14 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
         Map.entry("attributeOperation", "\"addition\" | \"multiply_base\" | \"multiply_total\""),
         Map.entry("levelDisplay", "\"default\" | \"single_level\" | \"no_levels\" | \"pluses\""),
         Map.entry("sprites", "(\"tconstruct:gui/modifiers/book\" | \"tconstruct:gui/modifiers/tier\" | `minecraft:item/${string}` | (string & {}))[]"),
-        Map.entry("tooltipDisplay", "\"always\" | \"tinker_station\" | \"never\"")
+        Map.entry("tooltipDisplay", "\"always\" | \"tinker_station\" | \"never\""),
+        Map.entry("partItem", "Special." + TinkerTypes.TOOL_PART_NAME),
+        Map.entry("toolStats", "Partial<Record<Special." + TinkerTypes.TOOL_STAT_NAME + ", number>>"),
+        Map.entry("slots", "Partial<Record<Special." + TinkerTypes.SLOT_NAME + ", number>>"),
+        Map.entry("toolActions", "(\"pickaxe_dig\" | \"axe_dig\" | \"shovel_dig\" | \"hoe_dig\" | \"sword_dig\" | \"shears_dig\" | \"axe_strip\" | \"shovel_flatten\" | \"hoe_till\" | \"sword_sweep\" | \"shield_block\" | (string & {}))[]"),
+        Map.entry("blockTag", "Special.BlockTag | `#${Special.BlockTag}`"),
+        Map.entry("options", "Record<string, any>"),
+        Map.entry("modifiable", "(\"aoe\" | \"bonus_slots\" | \"broad\" | \"durability\" | \"harvest\" | \"harvest/primary\" | \"harvest/stone\" | \"held\" | \"interactable\" | \"interactable/dual\" | \"interactable/left\" | \"interactable/right\" | \"melee\" | \"melee/parry\" | \"melee/primary\" | \"melee/sword\" | \"melee/weapon\" | \"multipart\" | \"small\" | \"special\" | \"unsalvageable\" | \"unswappable\" | (string & {}))[]")
     );
 
     @Override
@@ -95,7 +105,7 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
             doc.specialType(TinkerTypes.MODIFIABLE_NAME, literals(items(item -> item instanceof IModifiable), false));
             doc.specialType(TinkerTypes.TOOL_STAT_NAME, literals(ToolStats.getAllStats().stream().map(stat -> stat.getName().toString()), true));
             doc.specialType(TinkerTypes.ATTRIBUTE_NAME, literals(ForgeRegistries.ATTRIBUTES.getKeys().stream().map(Object::toString), true));
-            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class)) {
+            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class, ArsenalToolBuilder.class, ToolDataEventJS.ToolDefinitionJS.class)) {
                 doc.transformDocument(recipeClass, ArsenalProbeJSPlugin::describeParams);
             }
             return null;
