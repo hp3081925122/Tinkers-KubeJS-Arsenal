@@ -33,12 +33,15 @@ ArsenalModifierEvents.data(event => {
     .description('zh_cn', '近战伤害提高，命中后回复生命')
     .statBoost('tconstruct:attack_damage', 'add', 0.5)        // 匠魂原生 stat_boost 模块，每级 +0.5
     .module('tconstruct:enchantment', { /* 任意匠魂模块的原始 JSON */ })
+    .icon('minecraft:item/redstone', 'tconstruct:gui/modifiers/book')  // 图标，多张贴图按顺序叠画
     .levelDisplay('default')        // default | single_level | no_levels | pluses
     .tooltipDisplay('always')       // always | tinker_station | never
 })
 ```
 
-语言键为 `modifier.<ns>.<path>`、`.flavor`、`.description`，颜色写入 `mantle/colors.json`。加到工具上仍用已有的词条配方，或用 `/tconstruct modifiers @s add <id> <等级>` 测试。
+语言键为 `modifier.<ns>.<path>`、`.flavor`、`.description`，颜色写入 `mantle/colors.json`，图标写入 `tinkering/modifier_icons.json`，三者都随外观同步发给客户端。
+
+图标用于匠魂的书和 JEI。贴图必须在方块图集里：原版 `minecraft:item/*`、匠魂 `tconstruct:gui/modifiers/*` 可直接用；自己画的图放在 `kubejs/assets/kubejs/textures/item/<名字>.png`，写成 `kubejs:item/<名字>`。不设图标时，匠魂会画一本按词条颜色染色的默认书本。加到工具上仍用已有的词条配方，或用 `/tconstruct modifiers @s add <id> <等级>` 测试。
 
 ### 词条事件（只对带该词条的工具触发）
 

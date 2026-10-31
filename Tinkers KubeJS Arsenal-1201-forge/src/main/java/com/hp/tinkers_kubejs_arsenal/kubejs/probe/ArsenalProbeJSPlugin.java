@@ -75,6 +75,7 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
         Map.entry("attribute", "Special." + TinkerTypes.ATTRIBUTE_NAME),
         Map.entry("attributeOperation", "\"addition\" | \"multiply_base\" | \"multiply_total\""),
         Map.entry("levelDisplay", "\"default\" | \"single_level\" | \"no_levels\" | \"pluses\""),
+        Map.entry("sprites", "(\"tconstruct:gui/modifiers/book\" | \"tconstruct:gui/modifiers/tier\" | `minecraft:item/${string}` | (string & {}))[]"),
         Map.entry("tooltipDisplay", "\"always\" | \"tinker_station\" | \"never\"")
     );
 

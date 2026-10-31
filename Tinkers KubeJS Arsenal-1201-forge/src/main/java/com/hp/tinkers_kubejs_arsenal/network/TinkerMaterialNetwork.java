@@ -1,5 +1,6 @@
 package com.hp.tinkers_kubejs_arsenal.network;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hp.tinkers_kubejs_arsenal.TinkersKubejsArsenal;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialDataEventJS;
@@ -117,6 +118,7 @@ public final class TinkerMaterialNetwork {
             Map<String, String> resources = new LinkedHashMap<>();
             Map<String, JsonObject> colors = new LinkedHashMap<>();
             Map<String, Map<String, JsonObject>> languages = new LinkedHashMap<>();
+            Map<String, JsonObject> icons = new LinkedHashMap<>();
             for (MaterialDataEventJS.MaterialDefinition material : materials.values()) {
                 if (material.isInvalid() || !material.hasAssets()) {
                     continue;
@@ -143,7 +145,13 @@ public final class TinkerMaterialNetwork {
                 addLanguage(languages, id, modifier.translationKey(), modifier.names());
                 addLanguage(languages, id, modifier.translationKey() + ".flavor", modifier.flavors());
                 addLanguage(languages, id, modifier.translationKey() + ".description", modifier.descriptions());
+                if (!modifier.icons().isEmpty()) {
+                    JsonArray sprites = new JsonArray();
+                    modifier.icons().forEach(sprites::add);
+                    icons.computeIfAbsent(id.getNamespace(), key -> new JsonObject()).add(id.toString(), sprites);
+                }
             }
+            icons.forEach((namespace, json) -> resources.put(new ResourceLocation(namespace, "tinkering/modifier_icons.json").toString(), json.toString()));
             colors.forEach((namespace, json) -> resources.put(new ResourceLocation(namespace, "mantle/colors.json").toString(), json.toString()));
             languages.forEach((namespace, values) -> values.forEach((language, json) -> resources.put(new ResourceLocation(namespace, "lang/" + language + ".json").toString(), json.toString())));
             return of(resources);

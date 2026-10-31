@@ -7,7 +7,9 @@ import dev.latvian.mods.kubejs.util.JsonIO;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +42,7 @@ public class ModifierDataEventJS extends EventJS {
         private final Map<String, String> names = new LinkedHashMap<>();
         private final Map<String, String> flavors = new LinkedHashMap<>();
         private final Map<String, String> descriptions = new LinkedHashMap<>();
+        private final List<String> icons = new ArrayList<>();
         private String textColor;
         private boolean invalid;
 
@@ -113,6 +116,21 @@ public class ModifierDataEventJS extends EventJS {
             return this;
         }
 
+        public ModifierDefinition icon(String... sprites) {
+            if (sprites.length == 0) {
+                throw this.fail("Modifier icon requires at least one sprite such as minecraft:item/redstone");
+            }
+            this.icons.clear();
+            for (String sprite : sprites) {
+                ResourceLocation id = ResourceLocation.tryParse(sprite);
+                if (id == null) {
+                    throw this.fail("Invalid modifier icon sprite '" + sprite + "'");
+                }
+                this.icons.add(id.toString());
+            }
+            return this;
+        }
+
         public ModifierDefinition name(String text) {
             return this.name("en_us", text);
         }
@@ -175,6 +193,10 @@ public class ModifierDataEventJS extends EventJS {
 
         public Map<String, String> descriptions() {
             return this.descriptions;
+        }
+
+        public List<String> icons() {
+            return this.icons;
         }
 
         @Nullable
