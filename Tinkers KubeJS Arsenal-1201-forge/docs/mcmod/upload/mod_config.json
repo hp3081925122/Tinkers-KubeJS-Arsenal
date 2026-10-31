@@ -1,0 +1,22 @@
+{
+  "name": "匠魂 KubeJS 军械库",
+  "ename": "Tinkers KubeJS Arsenal",
+  "intro": "用 KubeJS 脚本扩展匠魂：配方、材料、材料三围与属性公式、部件、工具、护甲和词条，无需编写 Java。",
+  "modid": "tinkers_kubejs_arsenal",
+  "cfprojectid": "1775729",
+  "core": "实用",
+  "elements": ["指令", "国创"],
+  "platforms": ["JAVA版 (JAVA Edition)"],
+  "versions": {"Forge": ["1.20.1"]},
+  "links": [
+    ["curseforge", "https://www.curseforge.com/minecraft/mc-mods/tinkers-kubejs-arsenal", ""],
+    ["github", "https://github.com/hp3081925122/Tinkers-KubeJS-Arsenal", ""]
+  ],
+  "client": "需装",
+  "server": "需装",
+  "status": "活跃",
+  "source": "开源",
+  "authors": [{"id": 39471, "name": "AI仙人", "roles": ["owner"]}],
+  "content_file": "intro.html",
+  "injectCover": false
+}
