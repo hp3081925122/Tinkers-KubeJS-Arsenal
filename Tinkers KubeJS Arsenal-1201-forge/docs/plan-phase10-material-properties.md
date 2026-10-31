@@ -148,7 +148,7 @@
   2. 回退属性类型的 perStat；
   3. default。
 - 再把公式算出的特性追加到基础列表，写为该属性类型的 perStat。这样能避免一写 perStat，default 特性就消失（见 2.2）。
-- 基础列表里已经有同一个词条时，按"等级取较大值"合并，不重复添加。
+- 基础列表里已经有同一个词条时，等级相加，不重复添加（见第 10 节）。
 
 **手写数据仍可完全覆盖：** 想对某个材料完全手写某个属性类型，在材料的 stats 里写全该属性类型的所有字段，再在 `exclude` 里排除它即可。
 
@@ -312,3 +312,4 @@ ArsenalMaterialEvents.data(event => {
 - **测试文档：** `docs/test-phase10-material-properties.md`。
 - **替换模式：** 三围可写 `"replace": true`，有公式且未排除的属性类型丢弃手写属性，只用公式结果；部件公式和属性类型的特性仍在原基础上叠加。KubeJS 用 `.replaceStats()` 开启，`.properties({...})` 里的 `replace` 键与 `exclude` 一样作为保留字报错。
 - **三围并入属性文件：** 取消独立的 `tinkering/material_properties` 目录，三围改写在 `tinkering/materials/stats/<材料>.json` 的 `properties` 字段；匠魂用 Gson 解析时会忽略该字段。HPTlib 用 `listResourceStacks` 读取所有数据包的同名文件，`properties` 逐键合并。三围体系尚未发布，不保留旧写法的兼容。本模组 `ServerScriptManagerMixin` 生成材料和扩展时同样写入 `properties`。
+- **同名特性统一相加：** 属性公式的特性与材料已有同名特性原先取较高等级，现改为等级相加，与部件公式一致，避免写包时混淆。
