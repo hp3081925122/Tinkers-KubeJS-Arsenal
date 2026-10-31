@@ -97,6 +97,7 @@ public class MaterialDataEventJS extends EventJS {
         private final JsonObject render = new JsonObject();
         private JsonObject properties;
         private final JsonArray excludedFormulas = new JsonArray();
+        private boolean replaceStats;
         private final Map<String, String> names = new LinkedHashMap<>();
         private final Map<String, String> flavors = new LinkedHashMap<>();
         private final Map<String, String> encyclopedia = new LinkedHashMap<>();
@@ -280,6 +281,9 @@ public class MaterialDataEventJS extends EventJS {
                 if ("exclude".equals(entry.getKey())) {
                     throw this.fail("'exclude' is reserved; use .excludeFormula(...) instead");
                 }
+                if ("replace".equals(entry.getKey())) {
+                    throw this.fail("'replace' is reserved; use .replaceStats() instead");
+                }
                 if (!(entry.getValue() instanceof Number number)) {
                     throw this.fail("Material property '" + entry.getKey() + "' must be a number");
                 }
@@ -296,6 +300,11 @@ public class MaterialDataEventJS extends EventJS {
             return this;
         }
 
+        public MaterialDefinition replaceStats() {
+            this.replaceStats = true;
+            return this;
+        }
+
         public boolean hasProperties() {
             return this.properties != null;
         }
@@ -304,6 +313,9 @@ public class MaterialDataEventJS extends EventJS {
             JsonObject json = this.properties.deepCopy();
             if (!this.excludedFormulas.isEmpty()) {
                 json.add("exclude", this.excludedFormulas);
+            }
+            if (this.replaceStats) {
+                json.addProperty("replace", true);
             }
             return json;
         }

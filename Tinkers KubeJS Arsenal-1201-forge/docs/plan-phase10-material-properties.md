@@ -310,5 +310,5 @@ ArsenalMaterialEvents.data(event => {
 - **HPTlib 依赖：** 删除 `mods.toml` 中的 JEI 可选依赖，依据是"可选依赖不写入 mods.toml"的规则。
 - **示例修正：** 匠魂镐头部件的 ID 是 `tconstruct:pick_head`，Wiki 示例已改正。
 - **测试文档：** `docs/test-phase10-material-properties.md`。
-- **替换模式：** 三围可写 `"replace": true`，有公式且未排除的属性类型丢弃手写属性，只用公式结果；部件公式和属性类型的特性仍在原基础上叠加。目前只支持数据包写法，KubeJS `.properties()` 尚未支持。
+- **替换模式：** 三围可写 `"replace": true`，有公式且未排除的属性类型丢弃手写属性，只用公式结果；部件公式和属性类型的特性仍在原基础上叠加。KubeJS 用 `.replaceStats()` 开启，`.properties({...})` 里的 `replace` 键与 `exclude` 一样作为保留字报错。
 - **三围并入属性文件：** 取消独立的 `tinkering/material_properties` 目录，三围改写在 `tinkering/materials/stats/<材料>.json` 的 `properties` 字段；匠魂用 Gson 解析时会忽略该字段。HPTlib 用 `listResourceStacks` 读取所有数据包的同名文件，`properties` 逐键合并。三围体系尚未发布，不保留旧写法的兼容。本模组 `ServerScriptManagerMixin` 生成材料和扩展时同样写入 `properties`。
