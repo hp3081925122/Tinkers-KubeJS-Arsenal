@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import dev.latvian.mods.kubejs.bindings.event.ServerEvents;
+import dev.latvian.mods.kubejs.event.EventExceptionHandler;
 import dev.latvian.mods.kubejs.event.EventJS;
 import dev.latvian.mods.kubejs.event.EventResult;
+import dev.latvian.mods.kubejs.script.ScriptType;
 import dev.latvian.mods.kubejs.script.data.DataPackEventJS;
 import dev.latvian.mods.kubejs.server.ServerScriptManager;
 import dev.latvian.mods.kubejs.util.ConsoleJS;
@@ -37,6 +39,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = ServerScriptManager.class, remap = false)
 public abstract class ServerScriptManagerMixin {
     @Unique
+    private static final EventExceptionHandler TKJA$CONTINUE = (event, container, error) -> {
+        ConsoleJS.SERVER.error("Error in Arsenal data handler, continuing with the remaining handlers", error);
+        return null;
+    };
+
+    @Unique
     private DataPackEventJS tkja$pendingPack;
 
     @ModifyArg(method = "wrapResourceManager", at = @At(value = "INVOKE", target = "Ldev/latvian/mods/kubejs/event/EventHandler;post(Ldev/latvian/mods/kubejs/script/ScriptTypeHolder;Ldev/latvian/mods/kubejs/event/EventJS;)Ldev/latvian/mods/kubejs/event/EventResult;", ordinal = 1), index = 1)
@@ -44,7 +52,7 @@ public abstract class ServerScriptManagerMixin {
         this.tkja$pendingPack = null;
         if (event instanceof DataPackEventJS pack) {
             MaterialDataEventJS data = new MaterialDataEventJS();
-            ArsenalMaterialEvents.DATA.post(data);
+            ArsenalMaterialEvents.DATA.post(ScriptType.SERVER, data, TKJA$CONTINUE);
             boolean added = false;
             for (MaterialDataEventJS.MaterialDefinition material : data.getMaterials().values()) {
                 ResourceLocation id = material.id();
@@ -106,7 +114,7 @@ public abstract class ServerScriptManagerMixin {
                 added = true;
             }
             ModifierDataEventJS modifiers = new ModifierDataEventJS();
-            ArsenalModifierEvents.DATA.post(modifiers);
+            ArsenalModifierEvents.DATA.post(ScriptType.SERVER, modifiers, TKJA$CONTINUE);
             for (ModifierDataEventJS.ModifierDefinition modifier : modifiers.getModifiers().values()) {
                 ResourceLocation id = modifier.id();
                 if (modifier.isInvalid()) {
@@ -117,7 +125,7 @@ public abstract class ServerScriptManagerMixin {
                 added = true;
             }
             ToolDataEventJS tools = new ToolDataEventJS();
-            ArsenalToolEvents.DATA.post(tools);
+            ArsenalToolEvents.DATA.post(ScriptType.SERVER, tools, TKJA$CONTINUE);
             Map<String, JsonArray> itemTags = new LinkedHashMap<>();
             Map<ResourceLocation, List<ToolDataEventJS.ToolDefinitionJS>> armorSets = new LinkedHashMap<>();
             for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
