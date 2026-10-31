@@ -9,6 +9,9 @@ import com.hp.tinkers_kubejs_arsenal.network.TinkerMaterialNetwork;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalPartBuilder;
+import slimeknights.tconstruct.library.materials.MaterialRegistry;
+import slimeknights.mantle.data.registry.IdAwareComponentRegistry;
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ToolDataEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
 import java.util.LinkedHashMap;
@@ -73,7 +76,16 @@ public abstract class ServerScriptManagerMixin {
             }
             ToolDataEventJS tools = new ToolDataEventJS();
             ArsenalToolEvents.DATA.post(tools);
-            Map<String, JsonArray> modifiableTags = new LinkedHashMap<>();
+            Map<String, JsonArray> itemTags = new LinkedHashMap<>();
+            for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
+                ResourceLocation id = part.id;
+                if (MaterialRegistry.getInstance().getStatTypeLoader() instanceof IdAwareComponentRegistry<?> stats && !stats.getKeys().contains(part.getStatType())) {
+                    ConsoleJS.SERVER.warn("Part " + id + " uses unknown stat type " + part.getStatType() + ", so no material can make it");
+                }
+                part.recipes().forEach((path, json) -> pack.addJson(new ResourceLocation(id.getNamespace(), "recipes/" + path), json));
+                part.tags((tag, value) -> itemTags.computeIfAbsent(tag, key -> new JsonArray()).add(value));
+                added = true;
+            }
             for (ToolDataEventJS.ToolDefinitionJS tool : tools.getTools().values()) {
                 ResourceLocation id = tool.id();
                 if (tool.isInvalid()) {
@@ -90,7 +102,7 @@ public abstract class ServerScriptManagerMixin {
                 pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/tool_definitions/" + id.getPath()), tool.definition());
                 pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/station_layouts/" + id.getPath()), layout);
                 pack.addJson(new ResourceLocation(id.getNamespace(), "recipes/tools/building/" + id.getPath()), tool.recipe());
-                tool.modifiableTags().forEach(tag -> modifiableTags.computeIfAbsent(tag, key -> new JsonArray()).add(id.toString()));
+                tool.modifiableTags().forEach(tag -> itemTags.computeIfAbsent("tconstruct:modifiable/" + tag, key -> new JsonArray()).add(id.toString()));
                 added = true;
             }
             for (ResourceLocation id : ArsenalToolBuilder.TOOLS.keySet()) {
@@ -98,11 +110,12 @@ public abstract class ServerScriptManagerMixin {
                     ConsoleJS.SERVER.warn("Tool " + id + " is registered in startup_scripts but has no ArsenalToolEvents.data definition, so it has no stats and cannot be built");
                 }
             }
-            modifiableTags.forEach((tag, values) -> {
+            itemTags.forEach((tag, values) -> {
                 JsonObject json = new JsonObject();
                 json.addProperty("replace", false);
                 json.add("values", values);
-                pack.addJson(new ResourceLocation("tconstruct", "tags/items/modifiable/" + tag), json);
+                ResourceLocation tagId = new ResourceLocation(tag);
+                pack.addJson(new ResourceLocation(tagId.getNamespace(), "tags/items/" + tagId.getPath()), json);
             });
             TinkerMaterialNetwork.update(data.getMaterials(), modifiers.getModifiers());
             if (added && !ServerEvents.HIGH_DATA.hasListeners()) {

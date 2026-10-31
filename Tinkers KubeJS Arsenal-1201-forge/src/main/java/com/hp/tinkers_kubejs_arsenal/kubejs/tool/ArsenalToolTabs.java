@@ -7,6 +7,9 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import slimeknights.tconstruct.library.tools.helper.ToolBuildHandler;
 import slimeknights.tconstruct.library.tools.item.IModifiable;
+import slimeknights.tconstruct.library.tools.part.IMaterialItem;
+import slimeknights.tconstruct.smeltery.TinkerSmeltery;
+import slimeknights.tconstruct.tools.TinkerToolParts;
 import slimeknights.tconstruct.tools.TinkerTools;
 
 import java.util.Iterator;
@@ -18,7 +21,7 @@ public final class ArsenalToolTabs {
     private ArsenalToolTabs() {}
 
     public static void buildContents(BuildCreativeModeTabContentsEvent event) {
-        if (ArsenalToolBuilder.TOOLS.isEmpty()) {
+        if (ArsenalToolBuilder.TOOLS.isEmpty() && ArsenalPartBuilder.PARTS.isEmpty()) {
             return;
         }
         ResourceLocation tab = event.getTabKey().location();
@@ -28,10 +31,21 @@ public final class ArsenalToolTabs {
                     ToolBuildHandler.addVariants(event::accept, modifiable, "");
                 }
             }
+        } else if (tab.equals(TinkerToolParts.tabToolParts.getId())) {
+            for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
+                if (part.get() instanceof IMaterialItem materialItem) {
+                    materialItem.addVariants(event::accept, "");
+                }
+            }
+        } else if (tab.equals(TinkerSmeltery.tabSmeltery.getId())) {
+            for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
+                part.getCasts().forEach(cast -> event.accept(cast.get()));
+            }
         } else if (tab.equals(KUBEJS_TAB)) {
             Iterator<Map.Entry<ItemStack, CreativeModeTab.TabVisibility>> entries = event.getEntries().iterator();
             while (entries.hasNext()) {
-                if (ArsenalToolBuilder.TOOLS.containsKey(ForgeRegistries.ITEMS.getKey(entries.next().getKey().getItem()))) {
+                ResourceLocation key = ForgeRegistries.ITEMS.getKey(entries.next().getKey().getItem());
+                if (ArsenalToolBuilder.TOOLS.containsKey(key) || ArsenalPartBuilder.PARTS.containsKey(key) || ArsenalPartBuilder.CASTS.contains(key)) {
                     entries.remove();
                 }
             }

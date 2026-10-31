@@ -1,6 +1,7 @@
 package com.hp.tinkers_kubejs_arsenal.client;
 
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalPartBuilder;
 import net.minecraftforge.registries.ForgeRegistries;
 import slimeknights.tconstruct.library.tools.part.IToolPart;
 
@@ -91,6 +92,11 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
                     if (tool.isBroken(part.name())) {
                         parts.add(new Part(part.texture().withSuffix("_broken"), toolPart.getStatType(), true, false));
                     }
+                }
+            }
+            for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
+                if (part.getStatType() != null) {
+                    parts.add(new Part(part.getPartTexture(), part.getStatType(), true, false));
                 }
             }
             return parts;

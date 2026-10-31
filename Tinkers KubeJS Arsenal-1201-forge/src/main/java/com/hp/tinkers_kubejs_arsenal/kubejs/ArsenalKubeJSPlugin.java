@@ -15,6 +15,7 @@ import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalModifierEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalPartBuilder;
 import dev.latvian.mods.kubejs.registry.RegistryInfo;
 
 public class ArsenalKubeJSPlugin extends KubeJSPlugin {
@@ -24,6 +25,7 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
     public void init() {
         RegistryInfo.ITEM.addType(ArsenalToolBuilder.TOOL_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, false));
         RegistryInfo.ITEM.addType(ArsenalToolBuilder.SWORD_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, true));
+        RegistryInfo.ITEM.addType(ArsenalPartBuilder.TYPE, ArsenalPartBuilder.class, ArsenalPartBuilder::new);
     }
 
     @Override
