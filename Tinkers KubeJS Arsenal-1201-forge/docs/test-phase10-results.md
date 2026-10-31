@@ -29,7 +29,7 @@
 | D10 | 通过（修正测试对象） | 使用 `broad_axe` 时 lustrous 为 2，因为 TConstruct 的 broad axe 定义确实包含 `pick_head`，缩放为 `0.25`。交接文档把 broad axe 误列为“不含 pick_head”；该预期不成立。 |
 | D11 | 通过 | 木头镐在有部件公式时 attack=`1`、miningSpeed=`2`，没有获得 mythril 的部件加成。 |
 | D12 | 通过 | mctest 实测镐头提示框：硬度 4、密度 5、韧性 9；部件加成为近战伤害 +2、挖掘速度 -10%、光泽 II。工具手柄只有三围行。截图见 `run/mctest/runs/d12_tooltips-20261031-204423/`。 |
-| D13 | 部分通过 | 成品镐提示框实测耐久 599、加固 II、光泽 II、穿甲 I、攻击伤害 8.56。工匠站预览未测。截图见 `run/mctest/runs/d13_finished_correct-20261031-204506/`。 |
+| D13 | 通过 | 生存模式在 `phase10_gui` 放置工匠站，切换到镐布局，Shift 放入 mythril 镐头、工具手柄、绑定结。产出槽预览 NBT：attack `7.5600004`、mining_speed `2.5500002`、tier `stone`、durability `599.5`，词条 reinforced 2、lustrous 2、pierce 1；预览提示框和右侧属性面板为近战伤害 8.56、挖掘速度 2.55、挖掘等级石头。取出成品后，客户端 NBT、服务端 `/data get` 和成品提示框的数值都与预览相同，并等于 D8 镐 A。截图 `D:\AI临时文件	kja-phase10-d13\d13_preview-20261031-213231\d13_station_preview.png`；成品提示框截图见同目录 `d13_finished_tooltip.png`。 |
 | D14 | 通过 | 同一世界内执行 `/reload` 后，客户端脚本读回 hardness=`8`，head 为 attack=`8`、miningSpeed=`5`、tier=`IRON`。mctest 运行记录见 `run/mctest/runs/d14_reload-20261031-204528/` 和 `d14_stats-20261031-204556/`。 |
 | D15 | 通过（复测，非代码问题） | 首轮记为失败，是因为只执行了 `/reload` 就截图，漏了交接文档要求的“退出并重新进入世界”。匠魂 `ToolStack.verifyTag`（物品从 NBT 加载时调用）在材料注册表加载完成后会对有材料的工具执行 `rebuildStats()`，`/reload` 本身不改已有物品 NBT；HPTlib 的部件加成注入在 `MaterialStatsModule.addToolStats/addTraits`，属于 `rebuildStats` 流程。复测（新启动客户端，`phase10_gui` 存档，`/data get`）：hardness=4 时镐 A 为 attack `7.5600004`、mining_speed `2.5500002`、tier `stone`；改 hardness=8 并 `/reload` 后、重进前镐 A 不变（对照值）；同条件新造镐 C 为 attack `15.08`、mining_speed `4.25`、tier `iron`；退出重进后镐 A 变为 attack `15.08`、mining_speed `4.25`、tier `iron`，与镐 C 完全一致；词条 reinforced 2、lustrous 2（上限 2）、pierce 1 不变。运行记录：`D:\AI临时文件\tkja-phase10-d15\d15_rejoin-20261031-210957\`，脚本 `d15_rejoin.py`。 |
 
@@ -49,7 +49,7 @@
 
 ## 客户端与 GUI
 
-ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使用全新 `phase10_gui` 世界后，D12 和成品提示框测试取得 mctest 截图；之前旧存档的 `Failed to load data pack config` 不再作为本轮依据。工匠站预览仍未完成；专用服务器同步见 S1-S4。
+ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使用全新 `phase10_gui` 世界后，D12 和成品提示框测试取得 mctest 截图；之前旧存档的 `Failed to load data pack config` 不再作为本轮依据。工匠站预览见 D13，专用服务器同步见 S1-S4。
 
 ## 非本项目日志噪声
 
@@ -61,5 +61,6 @@ ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使�
 - K2/K3 脚本（`tkja_props_errors.js`、`tkja_verify_k3.js`）和日志：`D:\AI临时文件\tkja-phase10-k23\`，测完已从 `run/kubejs/server_scripts/` 移除；
 - D15 复测脚本、运行记录和客户端启动日志：`D:\AI临时文件\tkja-phase10-d15\`；`phase10_gui` 中的测试数据包和 `run/mctest/autojoin.txt` 测完已删除；
 - S 场景脚本、服务端和客户端日志、mctest 运行记录：`D:\AI临时文件\tkja-phase10-s\`；
+- D13 工匠站脚本和 mctest 运行记录：`D:\AI临时文件	kja-phase10-d13\`，`phase10_gui` 中的测试数据包测完已删除；
 - 客户端测试临时目录：`D:\AI临时文件\tkja-phase10-full-client\`（本轮未形成 GUI 通过截图）；
 - 当前仓库 `run` 中没有保留第十期临时数据包和脚本。
