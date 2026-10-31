@@ -22,11 +22,14 @@ public class ArsenalToolBuilder extends ItemBuilder {
     public static final String TOOL_TYPE = "tinkers_kubejs_arsenal:tool";
     public static final String SWORD_TYPE = "tinkers_kubejs_arsenal:sword";
     public static final Map<ResourceLocation, ArsenalToolBuilder> TOOLS = new LinkedHashMap<>();
+    private static final List<String> BOOK_PAGES = List.of("materials_and_you/%s/tools", "mighty_smelting/%s/tools", "encyclopedia/%s/tools/small", "encyclopedia/%s/tools/broad", "encyclopedia/%s/tools/ancient", "encyclopedia/%s/tools/staff");
 
     private final boolean sword;
     private final List<ToolPart> parts = new ArrayList<>();
     private final Set<String> brokenParts = new LinkedHashSet<>();
     private final Map<String, String> names = new LinkedHashMap<>();
+    private final Map<String, List<String>> bookTexts = new LinkedHashMap<>();
+    private final Map<String, List<String>> bookProperties = new LinkedHashMap<>();
 
     public ArsenalToolBuilder(ResourceLocation id, boolean sword) {
         super(id);
@@ -60,6 +63,16 @@ public class ArsenalToolBuilder extends ItemBuilder {
         return this;
     }
 
+    public ArsenalToolBuilder bookText(String lang, String text) {
+        this.bookTexts.computeIfAbsent(lang, key -> new ArrayList<>()).add(text);
+        return this;
+    }
+
+    public ArsenalToolBuilder bookProperty(String lang, String text) {
+        this.bookProperties.computeIfAbsent(lang, key -> new ArrayList<>()).add(text);
+        return this;
+    }
+
     public List<ToolPart> parts() {
         return List.copyOf(this.parts);
     }
@@ -86,6 +99,36 @@ public class ArsenalToolBuilder extends ItemBuilder {
             }
         }
         super.generateAssetJsons(generator);
+        Set<String> langs = new LinkedHashSet<>(this.bookTexts.keySet());
+        langs.addAll(this.bookProperties.keySet());
+        String file = this.id.getNamespace() + "_" + this.id.getPath().replace('/', '_');
+        for (String lang : langs) {
+            JsonObject page = this.bookPage(lang);
+            for (String folder : BOOK_PAGES) {
+                generator.json(new ResourceLocation("tconstruct", "book/" + folder.formatted(lang) + "/" + file), page);
+            }
+        }
+    }
+
+    private JsonObject bookPage(String lang) {
+        JsonArray text = new JsonArray();
+        for (String paragraph : this.bookTexts.getOrDefault(lang, List.of())) {
+            if (!text.isEmpty()) {
+                JsonObject separator = new JsonObject();
+                separator.addProperty("text", "\n");
+                text.add(separator);
+            }
+            JsonObject entry = new JsonObject();
+            entry.addProperty("text", paragraph);
+            text.add(entry);
+        }
+        JsonArray properties = new JsonArray();
+        this.bookProperties.getOrDefault(lang, List.of()).forEach(properties::add);
+        JsonObject json = new JsonObject();
+        json.addProperty("tool", this.id.toString());
+        json.add("text", text);
+        json.add("properties", properties);
+        return json;
     }
 
     @Override

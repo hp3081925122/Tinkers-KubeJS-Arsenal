@@ -40,6 +40,8 @@ StartupEvents.registry('item', event => {
 | `.partTexture(name, texture)` | 改某个部件的灰度底图路径，默认 `<命名空间>:item/tool/<工具路径>/<name>` |
 | `.brokenPart(name)` | 声明这个部件有损坏贴图 `<底图>_broken`，工具耐久耗尽时换成它；不声明就不生成损坏模型 |
 | `.name(lang, text)` | 其他语言的名称；英文名照常用 KubeJS 的 `.displayName(...)` |
+| `.bookText(lang, text)` | 匠魂手册工具页的介绍文字，每调用一次是一段，可多次调用 |
+| `.bookProperty(lang, text)` | 匠魂手册工具页"特性"列表的一条，可多次调用 |
 | `.parentModel(...)` | KubeJS 自带方法，改模型的手持姿态；默认普通工具用 `tconstruct:item/base/axe`，剑用 `forge:item/default-tool` |
 
 KubeJS 物品构建器自带的方法（`.tag`、`.rarity` 等）照常可用。工具固定不可堆叠。
@@ -107,6 +109,31 @@ ArsenalToolEvents.data(event => {
 - KubeJS 创造栏：KubeJS 默认会把每个 KubeJS 物品的无材料版本放进自己的创造栏，这种工具没有材料、模型显示不正常，所以从 KubeJS 创造栏里移除。
 - JEI：不需要单独接入。匠魂的 JEI 插件会给 `tconstruct:modifiable/multipart` 标签里的物品注册工具子类型，自定义工具已自动加入该标签；JEI 的物品列表取自创造栏内容，因此各材料变体会显示出来；生成的 `tconstruct:tool_building` 配方会出现在匠魂的"工具组装"配方页里。
 
+## 匠魂手册
+
+工具会不会出现在手册里、出现在哪一章，由服务端脚本的 `.modifiable(...)` 决定，和匠魂自带工具一样按标签收录：
+
+| 标签 | 收录到 |
+|---|---|
+| `small`（单手小工具：镐、鹤嘴锄、手斧、匕首、剑等） | 《材料与你》、《百科全书》小工具章 |
+| `broad`（双手大工具：大锤、挖掘铲、宽斧、镰刀、劈刀等） | 《强力熔炼》、《百科全书》大工具章 |
+| `special` / `ancient` | 《百科全书》法杖章 / 远古工具章 |
+
+两个标签都不加，手册里就没有这把工具。
+
+页面文字写在启动脚本：
+
+```js
+event.create('kubejs:war_pick', 'tinkers_kubejs_arsenal:tool')
+  // ...
+  .bookText('zh_cn', '战镐是一把能挖能打的重型镐。')
+  .bookText('zh_cn', '第二段介绍。')
+  .bookProperty('zh_cn', '挖掘石头和矿石')
+  .bookProperty('zh_cn', '扩展词条向前延伸')
+```
+
+启动脚本时还不知道工具归哪个标签，所以同一份页面会写进上面所有章节的目录；手册只读取实际收录这把工具的那一章，其他目录的文件不会被用到。没写 `.bookText` / `.bookProperty` 的语言，手册照样收录这把工具，只显示名称和部件组成，没有介绍文字。
+
 ## 输入检查
 
 以下情况报英文错误并跳过这把工具：
@@ -121,7 +148,7 @@ ArsenalToolEvents.data(event => {
 
 ## 文件
 
-- `kubejs/tool/ArsenalToolBuilder.java`：两种物品类型的构建器、模型 JSON 生成、多语言名称。
+- `kubejs/tool/ArsenalToolBuilder.java`：两种物品类型的构建器、模型 JSON 生成、多语言名称、手册页面生成。
 - `kubejs/tool/ToolDataEventJS.java`：`ArsenalToolEvents.data` 事件和工具定义链式对象。
 - `kubejs/tool/ArsenalToolTabs.java`：匠魂工具创造栏添加材料变体，KubeJS 创造栏移除无材料版本。
 - `TinkersKubejsArsenal.java`：注册创造栏事件监听。
@@ -141,4 +168,3 @@ ArsenalToolEvents.data(event => {
 - 只支持普通工具和剑；弓弩、护甲、盾牌、法杖等后续阶段实现。
 - 只能复用已有的部件；新部件形状后续阶段实现。
 - 部件贴图数量为"材料数 × 部件数"，和匠魂自带工具相同：匠魂的镐子在 jar 里预先放了 246 张部件贴图。区别只在于匠魂是打包时生成好的，本模组在每次资源重载时现场生成；单张贴图很小，生成开销和占用的图集空间都不大。
-- 匠魂手册条目未接入，后续阶段实现。
