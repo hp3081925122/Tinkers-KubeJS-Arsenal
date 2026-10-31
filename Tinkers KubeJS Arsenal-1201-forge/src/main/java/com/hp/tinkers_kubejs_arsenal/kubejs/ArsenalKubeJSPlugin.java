@@ -26,12 +26,16 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
     public void init() {
         RegistryInfo.ITEM.addType(ArsenalToolBuilder.TOOL_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, false));
         RegistryInfo.ITEM.addType(ArsenalToolBuilder.SWORD_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, true));
+        RegistryInfo.ITEM.addType(ArsenalToolBuilder.BOW_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, ArsenalToolBuilder.Kind.BOW));
+        RegistryInfo.ITEM.addType(ArsenalToolBuilder.CROSSBOW_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, ArsenalToolBuilder.Kind.CROSSBOW));
+        RegistryInfo.ITEM.addType(ArsenalToolBuilder.ARMOR_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, ArsenalToolBuilder.Kind.ARMOR));
         RegistryInfo.ITEM.addType(ArsenalPartBuilder.TYPE, ArsenalPartBuilder.class, ArsenalPartBuilder::new);
     }
 
     @Override
     public void initStartup() {
         ArsenalMaterialEvents.STAT_TYPES.post(new StatTypeEventJS());
+        ArsenalToolEvents.ARMOR_SETS.post(new com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalArmorSetBuilder.Event());
     }
 
     @Override

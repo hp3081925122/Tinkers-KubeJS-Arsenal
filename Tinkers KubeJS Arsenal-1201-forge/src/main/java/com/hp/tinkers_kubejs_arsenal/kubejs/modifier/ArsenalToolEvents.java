@@ -1,6 +1,7 @@
 package com.hp.tinkers_kubejs_arsenal.kubejs.modifier;
 
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ToolDataEventJS;
+import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalArmorSetBuilder;
 import dev.latvian.mods.kubejs.event.EventGroup;
 import dev.latvian.mods.kubejs.event.EventGroupWrapper;
 import dev.latvian.mods.kubejs.event.EventHandler;
@@ -10,6 +11,7 @@ public final class ArsenalToolEvents {
     public static final EventGroup GROUP = EventGroup.of("ArsenalToolEvents");
     public static final EventHandler STATS = GROUP.server("stats", () -> ToolStatsEventJS.class);
     public static final EventHandler DATA = GROUP.server("data", () -> ToolDataEventJS.class);
+    public static final EventHandler ARMOR_SETS = GROUP.startup("armorSets", () -> ArsenalArmorSetBuilder.Event.class);
 
     private ArsenalToolEvents() {}
 

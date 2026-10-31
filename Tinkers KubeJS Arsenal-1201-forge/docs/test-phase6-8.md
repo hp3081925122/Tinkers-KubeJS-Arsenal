@@ -15,13 +15,21 @@
 | 7 | 部件制作 | 通过 | `PartRecipe` 实测 `cost=4`、`pattern=kubejs:great_blade`；铁材料输出为 `kubejs:great_blade`。 |
 | 8 | 铸模 | 通过 | 实测金铸模配方的输入匹配为 `castMatch=true`，流体为 `tconstruct:molten_gold`、数量 `90`，输出为 `great_blade_cast`。 |
 | 9 | 工具组装 | 通过 | 铁/铜/木三材料战斧均成功组装；铁攻击 `6.75`、铜攻击 `5`、差值 `1.75`，攻速 `1.1000000238/1.2000000477`，耐久 `300/200`。`part_stats` 运行时缩放读回为 `1,1,1`。 |
-| 10 | 损坏模型 | 服务端通过，GUI 未测 | `ToolDamageUtil.breakTool` 后 `isBroken=true`。正式客户端/MCP 未准备好，因此没有把损坏模型截图计为通过。 |
+| 10 | 损坏模型 | 修复后通过 | 首测发现缺陷：损坏战斧图标仍用 `blade.png`（`blade.png` 独有的 6 个像素在两把战斧图标上都存在）。原因是没有为自定义工具注册 `tconstruct:broken` 物品属性，已修复（见“界面补测”）。修复后损坏战斧图标的刃身与 `blade_broken.png` 一致，正常战斧仍是完整刃身。 |
 | 11 | 回收 | 通过 | 匠魂通用回收显示配方共 `61` 条，结果中实际出现 `kubejs:great_blade`；显示配方材料占位为 `tconstruct:unknown`，这是通用回收展示层的占位值。 |
-| 12 | 创造栏 | GUI 未测 | 代码注册和标签加载正常；当前没有正式客户端/MCP 会话，未声称创造栏界面通过。 |
-| 13 | JEI | GUI 未测 | 开发客户端曾完成启动资源加载，但没有正式 JEI 页面检索截图，本次按要求标记未测。 |
-| 14 | 手册 | GUI 未测 | 手册资源和中文文本已生成；当前没有正式客户端/MCP 会话，未声称手册界面通过。 |
+| 12 | 创造栏 | 通过 | 打开创造物品栏后由客户端脚本读取各栏内容：`tool_parts` 有铜、铁巨刃 2 个；`smeltery` 有金、沙、红沙铸模 3 个；`tools` 有战斧变体 47 个；`kubejs:tab` 中这些物品数量为 0。 |
+| 13 | JEI | 通过 | 搜“巨刃”列出铜巨刃、铁巨刃和三种铸模共 5 项（截图）。铜巨刃配方页有“部件制作台”（铜，消耗 4）和“铸件台”两个分类（截图）。铁巨刃只有铸件台分类，与匠魂自己的铁镐头一致：铁、铜不能在部件制作台加工，不是缺陷。JEI 中输出巨刃的部件制作台配方共 11 条。 |
+| 14 | 手册 | 部分通过 | 《材料与你》工具目录列出“战斧”；第 46 页战斧页显示“测试用战斧。”和“测试特性一”，工具图标和三个部件格正常（截图）。材料页（铜，第 19 页）只显示匠魂内置属性类型，没有 `kubejs:blade`，所以找不到巨刃；铁是 2 级材料，不在这本手册里。属于第八期已知缺口：手册材料页不显示自定义属性类型。 |
 | 15 | `/reload` | 通过 | RCON 实测：基线 `attack=6.75`；临时把铁 `customStat` 从 `3` 改为 `5` 后执行 `/reload`，读回 `attack=8.75`；恢复为 `3` 并再次 `/reload` 后回到 `6.75`。RCON 已关闭。 |
 | 16 | `extend().statTrait()` | 通过 | 铁、铜的 blade 属性和 `tconstruct:sharpness` 均从注册表读回；本次补测另实测铁默认与 head 特性均保留 `tconstruct:magnetic`。扩展文件没有 `default` 字段，不会清空原材料默认特性。 |
+
+## 界面补测（2026年10月31日）
+
+在独立测试目录（导出提交 13ac1d1）启动 `runClient`，用 mctest（self_mcp 0.2.0）操作客户端，配合 KubeJS 客户端脚本读取创造栏内容、调用 JEI 和手册接口。测试世界通过“对局域网开放”临时开启作弊。
+
+- 损坏模型缺陷：匠魂按物品逐个注册 `tconstruct:broken`、`tconstruct:charging`、`tconstruct:charge` 等模型属性（`TinkerItemProperties.registerToolProperties`），本模组注册的 KubeJS 工具没有调用，导致损坏模型永远不切换。第九期弓弩的拉弓帧依赖同一组属性，也会受影响。
+- 修复：新增 `client/ArsenalToolProperties`，客户端初始化时对每个自定义工具调用 `registerToolProperties`，弩调用 `registerCrossbowProperties`；在主类注册。修复后复测 10 通过。
+- 测试中用原版 `/reload` 加载测试脚本会触发 JEI 全量重建，开发环境依赖 Advanced Loot Info 的 JEI 插件会卡住数分钟；只改脚本时应使用 `/kubejs reload server_scripts`。
 
 ## 4D/补测证据
 

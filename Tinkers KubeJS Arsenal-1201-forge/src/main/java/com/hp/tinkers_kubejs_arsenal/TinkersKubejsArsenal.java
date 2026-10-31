@@ -20,5 +20,7 @@ public final class TinkersKubejsArsenal {
         context.getModEventBus().addListener(ArsenalToolTabs::buildContents);
         context.getModEventBus().addListener(com.hp.tinkers_kubejs_arsenal.kubejs.material.ScriptMaterialStats::register);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> context.getModEventBus().addListener(com.hp.tinkers_kubejs_arsenal.client.SyncedMaterialClient::addPackFinders));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> context.getModEventBus().addListener(com.hp.tinkers_kubejs_arsenal.client.ArsenalToolProperties::register));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> context.getModEventBus().addListener(com.hp.tinkers_kubejs_arsenal.client.ArsenalBookSections::register));
     }
 }

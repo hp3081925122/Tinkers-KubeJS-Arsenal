@@ -81,7 +81,7 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
                 ResourceLocation stat = new ResourceLocation(json.get("stat_type").getAsString());
                 boolean allowAnimated = !json.has("allow_animated") || json.get("allow_animated").getAsBoolean();
                 boolean skipVariants = json.has("skip_variants") && json.get("skip_variants").getAsBoolean();
-                parts.add(new Part(path, new MaterialStatsId(stat.getNamespace(), stat.getPath()), allowAnimated, skipVariants));
+                parts.add(new Part(path, new MaterialStatsId(stat.getNamespace(), stat.getPath()), allowAnimated, skipVariants, false));
             }
             for (ArsenalToolBuilder tool : ArsenalToolBuilder.TOOLS.values()) {
                 for (ArsenalToolBuilder.ToolPart part : tool.parts()) {
@@ -89,15 +89,20 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
                         LOGGER.warn("Tool {} part '{}' uses {}, which is not a Tinkers tool part; no material textures generated", tool.id, part.name(), part.item());
                         continue;
                     }
-                    parts.add(new Part(part.texture(), toolPart.getStatType(), true, false));
+                    parts.add(new Part(part.texture(), toolPart.getStatType(), true, false, true));
                     if (tool.isBroken(part.name())) {
-                        parts.add(new Part(part.texture().withSuffix("_broken"), toolPart.getStatType(), true, false));
+                        parts.add(new Part(part.texture().withSuffix("_broken"), toolPart.getStatType(), true, false, true));
+                    }
+                    if (tool.pullFrames().contains(part.name())) {
+                        for (int frame = 1; frame <= 3; frame++) {
+                            parts.add(new Part(part.texture().withSuffix("_" + frame), toolPart.getStatType(), true, false, true));
+                        }
                     }
                 }
             }
             for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
                 if (part.getStatType() != null) {
-                    parts.add(new Part(part.getPartTexture(), part.getStatType(), true, false));
+                    parts.add(new Part(part.getPartTexture(), part.getStatType(), true, false, false));
                 }
             }
             return parts;
@@ -122,8 +127,9 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
             ResourceLocation materialTexture = this.materialTexture(file, json);
             String textureSuffix = this.textureSuffix(materialTexture);
             Set<MaterialStatsId> supportedStats = this.supportedStats(generatorJson);
+            boolean unknown = "tconstruct_unknown".equals(textureSuffix);
             for (Part part : parts) {
-                if ((generator.isVariant() && part.skipVariants()) || (!generatorJson.has("ignore_material_stats") || !generatorJson.get("ignore_material_stats").getAsBoolean()) && !supportedStats.contains(part.statType()) && !(StatTypeEventJS.TYPES.containsKey(part.statType()) && supportedStats.contains(StatTypeEventJS.TYPES.get(part.statType()).textureStat()))) {
+                if (!(unknown && part.toolTexture()) && ((generator.isVariant() && part.skipVariants()) || (!generatorJson.has("ignore_material_stats") || !generatorJson.get("ignore_material_stats").getAsBoolean()) && !supportedStats.contains(part.statType()) && !(StatTypeEventJS.TYPES.containsKey(part.statType()) && supportedStats.contains(StatTypeEventJS.TYPES.get(part.statType()).textureStat())))) {
                     continue;
                 }
                 NativeImage source = this.loadSource(manager, part.path(), json);
@@ -220,7 +226,7 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
         return stats;
     }
 
-    private record Part(ResourceLocation path, MaterialStatsId statType, boolean allowAnimated, boolean skipVariants) {}
+    private record Part(ResourceLocation path, MaterialStatsId statType, boolean allowAnimated, boolean skipVariants, boolean toolTexture) {}
 
     private static final class ImageSupplier implements SpriteSupplier {
         private final ResourceLocation id;

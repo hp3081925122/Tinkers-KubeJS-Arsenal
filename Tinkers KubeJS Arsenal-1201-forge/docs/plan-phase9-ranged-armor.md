@@ -286,8 +286,8 @@ ArsenalToolEvents.data(event => {
 
 ## 7. 待确认问题（开工时先查清）
 
-1. `DummyArmorMaterial` 的防御、耐久返回值，会不会让原版护甲属性叠加到匠魂数值上。
-2. 格挡模型 `blocking_N` 的结构。
-3. 布局 `icon` 能不能用物品而不用图案，护甲套布局里怎么写最省事。
-4. 各手册护甲章节的 `load_tools` 路径。
-5. 弓弩的 `_broken` 是否也有拉弓帧。
+1. 已确认：`DummyArmorMaterial` 的防御、耐久、韧性和击退抗性均返回 0，不会叠加原版护甲属性。
+2. 已确认：`blocking` 使用长弓/弩基础模型，`blocking_1..3` 继承对应 `pulling_1..3`，并保留第一人称显示参数。
+3. 已确认：布局 `icon` 支持 `item` 和 `pattern`；护甲套采用匠魂同款 `pattern` 图标，第一格使用四种 plating 的数组过滤器。
+4. 已确认：百科全书使用 `tconstruct:modifiable/book_armor`，其他手册使用 `tconstruct:modifiable/book_armor/<手册名>`，页面路径均为 `armor`。
+5. 已确认：弓弩只有普通 `_broken` 贴图，没有 `_broken_1..3` 拉弓损坏帧。

@@ -43,6 +43,51 @@ public class ToolDataEventJS extends EventJS {
         return this.tools;
     }
 
+    public static JsonObject armorLayout(ResourceLocation setId, List<ToolDefinitionJS> definitions) {
+        if (definitions.isEmpty()) {
+            throw new IllegalArgumentException("Armor set " + setId + " has no tool definitions");
+        }
+        JsonArray filters = new JsonArray();
+        int maxParts = definitions.stream().mapToInt(definition -> definition.builder().parts().size()).max().orElse(0);
+        for (int index = 0; index < maxParts; index++) {
+            JsonArray filterItems = new JsonArray();
+            Set<String> seen = new LinkedHashSet<>();
+            for (ToolDefinitionJS definition : definitions) {
+                if (index < definition.builder().parts().size()) {
+                    ResourceLocation item = definition.builder().parts().get(index).item();
+                    if (seen.add(item.toString())) {
+                        JsonObject entry = new JsonObject();
+                        entry.addProperty("item", item.toString());
+                        filterItems.add(entry);
+                    }
+                }
+            }
+            filters.add(filterItems);
+        }
+        int[][] positions = {{33, 29}, {33, 53}, {33, 77}, {33, 101}};
+        JsonArray slots = new JsonArray();
+        for (int index = 0; index < filters.size(); index++) {
+            JsonObject slot = new JsonObject();
+            JsonArray filter = filters.get(index).getAsJsonArray();
+            slot.add("filter", filter.size() == 1 ? filter.get(0) : filter);
+            String icon = definitions.get(0).builder().parts().get(Math.min(index, definitions.get(0).builder().parts().size() - 1)).item().toString();
+            slot.addProperty("icon", icon);
+            slot.addProperty("translation_key", "item." + icon.replace(':', '.'));
+            int[] position = positions[Math.min(index, positions.length - 1)];
+            slot.addProperty("x", position[0]);
+            slot.addProperty("y", position[1]);
+            slots.add(slot);
+        }
+        JsonObject icon = new JsonObject();
+        icon.addProperty("pattern", setId.toString());
+        JsonObject json = new JsonObject();
+        json.add("icon", icon);
+        json.add("input_slots", slots);
+        json.addProperty("sortIndex", 15);
+        json.addProperty("translation_key", "gui." + setId.getNamespace() + "." + setId.getPath());
+        return json;
+    }
+
     public static class ToolDefinitionJS {
         private final ResourceLocation id;
         private final ArsenalToolBuilder builder;
@@ -214,6 +259,27 @@ public class ToolDataEventJS extends EventJS {
         public Set<String> modifiableTags() {
             Set<String> tags = new LinkedHashSet<>(List.of("multipart", "durability"));
             tags.addAll(this.modifiable);
+            if (this.builder.kind() == ArsenalToolBuilder.Kind.BOW) {
+                tags.add("ranged/longbows");
+                tags.add("interactable/left");
+            } else if (this.builder.kind() == ArsenalToolBuilder.Kind.CROSSBOW) {
+                tags.add("ranged/crossbows");
+                tags.add("interactable/left");
+            } else if (this.builder.kind() == ArsenalToolBuilder.Kind.ARMOR) {
+                String slot = this.builder.armorSlot();
+                tags.add("armor/" + ("helmet".equals(slot) ? "helmets" : slot));
+                ArsenalArmorSetBuilder set = ArsenalArmorSetBuilder.SETS.get(this.builder.armorSet());
+                if (set != null) {
+                    if (set.dyeable()) tags.add("dyeable");
+                    if (set.hasTrim()) tags.add("armor/trim");
+                    tags.add("armor/worn");
+                }
+                tags.add("book_armor");
+                tags.add("book_armor/encyclopedia");
+                for (String book : this.builder.armorBooks()) {
+                    tags.add("book_armor/" + book);
+                }
+            }
             return tags;
         }
 
@@ -222,7 +288,7 @@ public class ToolDataEventJS extends EventJS {
             JsonObject partStats = new JsonObject();
             JsonArray parts = new JsonArray();
             JsonArray materials = new JsonArray();
-            for (ArsenalToolBuilder.ToolPart part : this.builder.parts()) {
+            for (ArsenalToolBuilder.ToolPart part : this.builder.logicalParts()) {
                 parts.add(part.item().toString());
                 JsonObject material = new JsonObject();
                 material.addProperty("type", "tconstruct:random");
@@ -235,7 +301,7 @@ public class ToolDataEventJS extends EventJS {
             JsonObject defaults = new JsonObject();
             defaults.add("materials", materials);
             list.add(typed("tconstruct:default_materials", defaults));
-            if (this.baseStats.size() > 0) {
+            if (this.baseStats.size() > 0 && this.builder.kind() != ArsenalToolBuilder.Kind.ARMOR) {
                 list.add(typed("tconstruct:base_stats", wrap("stats", this.baseStats)));
             }
             if (this.multipliers.size() > 0) {
@@ -260,7 +326,7 @@ public class ToolDataEventJS extends EventJS {
         }
 
         public JsonObject layout() {
-            List<ArsenalToolBuilder.ToolPart> parts = this.builder.parts();
+            List<ArsenalToolBuilder.ToolPart> parts = this.builder.logicalParts();
             int[][] defaults = parts.size() <= DEFAULT_LAYOUTS.length ? DEFAULT_LAYOUTS[parts.size() - 1] : new int[0][];
             JsonArray slots = new JsonArray();
             for (int i = 0; i < parts.size(); i++) {
@@ -295,18 +361,28 @@ public class ToolDataEventJS extends EventJS {
             json.addProperty("type", "tconstruct:tool_building");
             json.addProperty("result", this.id.toString());
             json.addProperty("result_count", 1);
+            if (this.builder.kind() == ArsenalToolBuilder.Kind.ARMOR) {
+                json.addProperty("slot_layout", this.builder.armorSet().toString() + "_armor");
+            }
             return json;
+        }
+
+        public ArsenalToolBuilder builder() {
+            return this.builder;
         }
 
         private void checkRegistered() {
             if (this.builder == null) {
                 throw this.fail("Not registered; create it in startup_scripts with StartupEvents.registry('item', event => event.create('" + this.id + "', '" + ArsenalToolBuilder.TOOL_TYPE + "'))");
             }
-            for (ArsenalToolBuilder.ToolPart part : this.builder.parts()) {
+            for (ArsenalToolBuilder.ToolPart part : this.builder.logicalParts()) {
                 Item item = ForgeRegistries.ITEMS.getValue(part.item());
                 if (!(item instanceof IToolPart)) {
                     throw this.fail("Part '" + part.name() + "' uses " + part.item() + ", which is not a Tinkers tool part");
                 }
+            }
+            if (this.builder.kind() == ArsenalToolBuilder.Kind.ARMOR && (this.builder.armorSlot() == null || this.builder.armorSet() == null)) {
+                throw this.fail("Armor items require .slot(armorSlot) and .armorSet(armorSet)");
             }
         }
 
@@ -339,8 +415,8 @@ public class ToolDataEventJS extends EventJS {
         }
 
         private void checkIndex(int index) {
-            if (index < 0 || index >= this.builder.parts().size()) {
-                throw this.fail("Part index " + index + " is out of range, the tool has " + this.builder.parts().size() + " parts");
+            if (index < 0 || index >= this.builder.logicalParts().size()) {
+                throw this.fail("Part index " + index + " is out of range, the tool has " + this.builder.logicalParts().size() + " parts");
             }
         }
 

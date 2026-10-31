@@ -15,6 +15,8 @@ import slimeknights.mantle.data.registry.IdAwareComponentRegistry;
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ToolDataEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import dev.latvian.mods.kubejs.bindings.event.ServerEvents;
 import dev.latvian.mods.kubejs.event.EventJS;
@@ -93,6 +95,7 @@ public abstract class ServerScriptManagerMixin {
             ToolDataEventJS tools = new ToolDataEventJS();
             ArsenalToolEvents.DATA.post(tools);
             Map<String, JsonArray> itemTags = new LinkedHashMap<>();
+            Map<ResourceLocation, List<ToolDataEventJS.ToolDefinitionJS>> armorSets = new LinkedHashMap<>();
             for (ArsenalPartBuilder part : ArsenalPartBuilder.PARTS.values()) {
                 ResourceLocation id = part.id;
                 if (MaterialRegistry.getInstance().getStatTypeLoader() instanceof IdAwareComponentRegistry<?> stats && !stats.getKeys().contains(part.getStatType())) {
@@ -108,18 +111,31 @@ public abstract class ServerScriptManagerMixin {
                     ConsoleJS.SERVER.error("Tool " + id + " was not generated because its definition has errors");
                     continue;
                 }
-                JsonObject layout;
-                try {
-                    layout = tool.layout();
-                } catch (IllegalArgumentException e) {
-                    ConsoleJS.SERVER.error(e.getMessage());
-                    continue;
-                }
                 pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/tool_definitions/" + id.getPath()), tool.definition());
-                pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/station_layouts/" + id.getPath()), layout);
+                if (tool.builder().kind() == ArsenalToolBuilder.Kind.ARMOR) {
+                    armorSets.computeIfAbsent(tool.builder().armorSet(), key -> new ArrayList<>()).add(tool);
+                } else {
+                    JsonObject layout;
+                    try {
+                        layout = tool.layout();
+                    } catch (IllegalArgumentException e) {
+                        ConsoleJS.SERVER.error(e.getMessage());
+                        continue;
+                    }
+                    pack.addJson(new ResourceLocation(id.getNamespace(), "tinkering/station_layouts/" + id.getPath()), layout);
+                }
                 pack.addJson(new ResourceLocation(id.getNamespace(), "recipes/tools/building/" + id.getPath()), tool.recipe());
                 tool.modifiableTags().forEach(tag -> itemTags.computeIfAbsent("tconstruct:modifiable/" + tag, key -> new JsonArray()).add(id.toString()));
                 added = true;
+            }
+            for (Map.Entry<ResourceLocation, List<ToolDataEventJS.ToolDefinitionJS>> entry : armorSets.entrySet()) {
+                ResourceLocation setId = entry.getKey();
+                try {
+                    pack.addJson(new ResourceLocation(setId.getNamespace(), "tinkering/station_layouts/" + setId.getPath() + "_armor"), ToolDataEventJS.armorLayout(setId, entry.getValue()));
+                    added = true;
+                } catch (IllegalArgumentException exception) {
+                    ConsoleJS.SERVER.error(exception.getMessage());
+                }
             }
             for (ResourceLocation id : ArsenalToolBuilder.TOOLS.keySet()) {
                 if (!tools.getTools().containsKey(id)) {
