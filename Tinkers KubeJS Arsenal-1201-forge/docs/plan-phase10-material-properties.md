@@ -78,14 +78,17 @@
 
 ### 3.1 材料三围
 
-路径：`data/<材料命名空间>/tinkering/material_properties/<材料路径>.json`，与匠魂的 `tinkering/materials/stats` 一样按材料 ID 命名。同一路径的文件，高优先级数据包会**整份覆盖**低优先级的。
+路径：写在匠魂材料属性文件 `data/<材料命名空间>/tinkering/materials/stats/<材料路径>.json` 的 `properties` 字段（与 `stats` 并列，见第 10 节）。多个数据包按优先级逐键合并。
 
 ```json
 {
-  "hardness": 4,
-  "density": 5,
-  "toughness": 9,
-  "exclude": ["tconstruct:limb"]
+  "properties": {
+    "hardness": 4,
+    "density": 5,
+    "toughness": 9,
+    "exclude": ["tconstruct:limb"]
+  },
+  "stats": { ... }
 }
 ```
 
@@ -158,7 +161,7 @@
 **数据加载：**
 - `MaterialPropertiesLoader` 与 `StatFormulaLoader`：继承 `SimpleJsonResourceReloadListener`，在 `AddReloadListenerEvent` 中注册，只在服务端运行。
 - **加载顺序有问题**：重载监听器的 prepare 阶段是并行执行的，不能保证在匠魂的 `finishLoad` 之前加载完成。
-- 因此注入时**不依赖上述监听器的结果**。直接在 Mixin 里用 `finishLoad` 的 `ResourceManager` 参数调用 `manager.listResources("tinkering/material_properties", ...)` 和 `manager.listResources("tinkering/stat_formulas", ...)` 自行读取。
+- 因此注入时**不依赖上述监听器的结果**。直接在 Mixin 里用 `finishLoad` 的 `ResourceManager` 参数调用 `manager.listResourceStacks("tinkering/materials/stats", ...)` 和 `manager.listResources("tinkering/stat_formulas", ...)` 自行读取。
 - 两个文件夹的解析各只做一次：在 `MaterialStatsManager.finishLoad` 时读取，并缓存到一个静态快照中，供紧随其后的特性注入使用。
 - 匠魂的这两个管理器注册顺序是 stats 在前、traits 在后。这一点开工时要确认；如果顺序不确定，就让两边各自读取一次。
 
@@ -194,8 +197,8 @@ ArsenalMaterialEvents.data(event => {
 })
 ```
 
-**生成：** `ServerScriptManagerMixin` 已经负责向 `DataPackEventJS` 写入 JSON，本期增加写入以下两个目录：
-- `tinkering/material_properties/<材料>.json`
+**生成：** `ServerScriptManagerMixin` 已经负责向 `DataPackEventJS` 写入 JSON，本期增加写入：
+- `tinkering/materials/stats/<材料>.json` 的 `properties` 字段
 - `tinkering/stat_formulas/<属性类型>.json`
 
 本模组不做任何计算，计算统一由 HPTlib 完成，保证 KubeJS 写法和数据包写法的结果一致。
@@ -299,7 +302,7 @@ ArsenalMaterialEvents.data(event => {
 
 - **部件提示框：** HPTlib 新增 `MaterialPropertiesTooltip`，只在客户端注册，监听 `ItemTooltipEvent`。
   - 不显示三围数值（按用户要求已去掉三围行）。
-  - 部件物品有部件公式时，再列出"部件加成"：属性按运算方式着色显示，特性显示名称和等级。数值按部件倍率 1 显示。
+  - 部件物品有部件公式时显示加成（按部件倍率 1）：特性并入匠魂词条区，同名词条等级相加；属性只在按住 Shift 时显示，同名属性未开 F3+H 显示合并后的最终值，开 F3+H 显示"原值 (加成)"；原本没有的属性未开 F3+H 直接显示数值，开 F3+H 用括号显示。不出现"部件加成"字样。
 - **报错文案：** 部件公式里特性报错时，前缀改为 `Part formula <部件>`，之前误用了 `Stat formula`。
 - **弱引用：** `HptMaterialProperties` 记录上次加载用的 `ResourceManager` 时改用 `WeakReference`，不再持有已关闭的资源管理器。
 - **同步日志：** 客户端收到同步包时输出英文日志 `Received synced material properties ...`，供测试取证。
@@ -307,4 +310,5 @@ ArsenalMaterialEvents.data(event => {
 - **HPTlib 依赖：** 删除 `mods.toml` 中的 JEI 可选依赖，依据是"可选依赖不写入 mods.toml"的规则。
 - **示例修正：** 匠魂镐头部件的 ID 是 `tconstruct:pick_head`，Wiki 示例已改正。
 - **测试文档：** `docs/test-phase10-material-properties.md`。
-
+- **替换模式：** 三围可写 `"replace": true`，有公式且未排除的属性类型丢弃手写属性，只用公式结果；部件公式和属性类型的特性仍在原基础上叠加。目前只支持数据包写法，KubeJS `.properties()` 尚未支持。
+- **三围并入属性文件：** 取消独立的 `tinkering/material_properties` 目录，三围改写在 `tinkering/materials/stats/<材料>.json` 的 `properties` 字段；匠魂用 Gson 解析时会忽略该字段。HPTlib 用 `listResourceStacks` 读取所有数据包的同名文件，`properties` 逐键合并。三围体系尚未发布，不保留旧写法的兼容。本模组 `ServerScriptManagerMixin` 生成材料和扩展时同样写入 `properties`。

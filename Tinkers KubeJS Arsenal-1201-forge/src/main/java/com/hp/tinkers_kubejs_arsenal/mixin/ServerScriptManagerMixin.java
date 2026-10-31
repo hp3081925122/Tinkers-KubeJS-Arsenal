@@ -64,16 +64,18 @@ public abstract class ServerScriptManagerMixin {
                     ConsoleJS.SERVER.warn("Material " + id + " has no stats, so no tool parts can be made from it");
                 }
                 add(pack, id, "definition", material.definition());
-                if (material.stats().size() > 0) {
+                if (material.stats().size() > 0 || material.hasProperties()) {
                     JsonObject stats = new JsonObject();
-                    stats.add("stats", material.stats());
+                    if (material.hasProperties()) {
+                        stats.add(HptMaterialProperties.PROPERTIES_KEY, material.propertiesJson());
+                    }
+                    if (material.stats().size() > 0) {
+                        stats.add("stats", material.stats());
+                    }
                     add(pack, id, "stats", stats);
                 }
                 if (material.hasTraits()) {
                     add(pack, id, "traits", material.traits());
-                }
-                if (material.hasProperties()) {
-                    pack.addJson(new ResourceLocation(id.getNamespace(), HptMaterialProperties.PROPERTIES_FOLDER + "/" + id.getPath()), material.propertiesJson());
                 }
                 added = true;
             }
@@ -82,18 +84,19 @@ public abstract class ServerScriptManagerMixin {
                     ConsoleJS.SERVER.error("Material extension " + extension.id() + " was not generated because it has errors");
                     continue;
                 }
-                if (extension.stats().size() > 0) {
+                if (extension.stats().size() > 0 || extension.hasProperties()) {
                     JsonObject stats = new JsonObject();
-                    stats.add("stats", extension.stats());
+                    if (extension.hasProperties()) {
+                        stats.add(HptMaterialProperties.PROPERTIES_KEY, extension.propertiesJson());
+                    }
+                    if (extension.stats().size() > 0) {
+                        stats.add("stats", extension.stats());
+                    }
                     add(pack, extension.id(), "stats", stats);
                     added = true;
                 }
                 if (extension.hasTraits()) {
                     add(pack, extension.id(), "traits", extension.traits());
-                    added = true;
-                }
-                if (extension.hasProperties()) {
-                    pack.addJson(new ResourceLocation(extension.id().getNamespace(), HptMaterialProperties.PROPERTIES_FOLDER + "/" + extension.id().getPath()), extension.propertiesJson());
                     added = true;
                 }
             }

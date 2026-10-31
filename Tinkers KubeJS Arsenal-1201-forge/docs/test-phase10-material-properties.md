@@ -86,19 +86,17 @@ MCP 连不上或操作失败时，把这一项标为"未测"并写明原因，**
 { "craftable": true, "hidden": false, "sortOrder": 100, "tier": 1 }
 ```
 
-**三围**：`data/hpt_test/tinkering/material_properties/` 下建三个文件。
-- `mythril.json`：`{ "hardness": 4, "density": 5, "toughness": 9 }`
-- `partial.json`：`{ "hardness": 4, "density": 5, "toughness": 9 }`
-- `excluded.json`：`{ "hardness": 4, "density": 5, "toughness": 9, "exclude": ["tconstruct:handle"] }`
-
-**partial 手写的头部属性**：`data/hpt_test/tinkering/materials/stats/partial.json`
+**三围**：写在 `data/hpt_test/tinkering/materials/stats/` 下三个文件的 `properties` 字段。
+- `mythril.json`：`{ "properties": { "hardness": 4, "density": 5, "toughness": 9 } }`
+- `excluded.json`：`{ "properties": { "hardness": 4, "density": 5, "toughness": 9, "exclude": ["tconstruct:handle"] } }`
+- `partial.json`（同时手写头部属性）：
 ```json
-{ "stats": { "tconstruct:head": { "melee_attack": 10 } } }
+{ "properties": { "hardness": 4, "density": 5, "toughness": 9 }, "stats": { "tconstruct:head": { "melee_attack": 10 } } }
 ```
 
-**给匠魂的铁加三围**：`data/tconstruct/tinkering/material_properties/iron.json`
+**给匠魂的铁加三围**：`data/tconstruct/tinkering/materials/stats/iron.json`（只写 `properties`，与匠魂原文件逐键合并，不覆盖原有属性）
 ```json
-{ "hardness": 6, "density": 7, "toughness": 5 }
+{ "properties": { "hardness": 6, "density": 7, "toughness": 5 } }
 ```
 
 **属性公式**：`data/tconstruct/tinkering/stat_formulas/` 下建三个文件。
@@ -247,7 +245,7 @@ ArsenalMaterialEvents.data(event => {
 | D11 | 没有三围的材料不加成 | A | 用木头（`tconstruct:wood`，没有三围）作为镐头材料造镐，在有和没有 `pick_head.json` 两种情况下读攻击 | 两次攻击相同 |
 | D12 | 部件提示框 | B | 执行 `/give @p tconstruct:pick_head{Material:"hpt_test:mythril"}` 和 `/give @p tconstruct:tool_handle{Material:"hpt_test:mythril"}`，悬停截图（中文、英文各一张） | 镐头提示框有"部件加成："，下面是攻击 +2、挖掘速度 −10%、光泽 II；两个提示框都**不显示**三围；手柄提示框没有部件加成 |
 | D13 | 工具提示框与工匠站预览 | B | 在工匠站用 mythril 部件组装镐子，截图预览结果；拿出成品后截图提示框 | 预览和成品的攻击、挖掘速度一致，都等于 D8 中镐 A 的值 |
-| D14 | /reload 生效 | A | 把 `data/hpt_test/tinkering/material_properties/mythril.json` 的 hardness 改为 8，`/reload` 后重读 mythril 的 head | `melee_attack` 为 8；`mining_speed` 为 2 + 4 − 1 = 5；`mining_tier` 为 `minecraft:iron`。测完改回 4 |
+| D14 | /reload 生效 | A | 把 `data/hpt_test/tinkering/materials/stats/mythril.json` 中 `properties` 的 hardness 改为 8，`/reload` 后重读 mythril 的 head | `melee_attack` 为 8；`mining_speed` 为 2 + 4 − 1 = 5；`mining_tier` 为 `minecraft:iron`。测完改回 4 |
 | D15 | 已有工具重算 | C | D14 改完之后，把 D8 造出的镐 A 放进背包，退出并重新进入世界，再用 `/data get` 读它的攻击 | 重新进入后攻击按 hardness 8 重算（部件加成 +4，头部攻击 8）。报告中记录 `/reload` 之后、重进之前的值作为对照 |
 
 ### 场景 K：KubeJS 写法（本模组开发环境，新建世界，不放数据包）
