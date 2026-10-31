@@ -74,6 +74,10 @@ public abstract class ServerScriptManagerMixin {
                     add(pack, extension.id(), "stats", stats);
                     added = true;
                 }
+                if (extension.hasTraits()) {
+                    add(pack, extension.id(), "traits", extension.traits());
+                    added = true;
+                }
             }
             ModifierDataEventJS modifiers = new ModifierDataEventJS();
             ArsenalModifierEvents.DATA.post(modifiers);

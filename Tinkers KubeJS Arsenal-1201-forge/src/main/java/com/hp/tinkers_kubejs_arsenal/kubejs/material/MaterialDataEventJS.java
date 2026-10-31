@@ -248,7 +248,6 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition statTrait(String stat, String modifier, int level) {
-            this.requireFull("statTrait");
             String key = new ResourceLocation(stat).toString();
             JsonArray values = this.perStat.has(key) ? this.perStat.getAsJsonArray(key) : new JsonArray();
             values.add(traitJson(modifier, level));
@@ -401,7 +400,9 @@ public class MaterialDataEventJS extends EventJS {
 
         public JsonObject traits() {
             JsonObject traits = new JsonObject();
-            traits.add("default", this.defaultTraits);
+            if (!this.extension) {
+                traits.add("default", this.defaultTraits);
+            }
             traits.add("perStat", this.perStat);
             return traits;
         }
@@ -516,6 +517,9 @@ public class MaterialDataEventJS extends EventJS {
 
         private void requireFull(String method) {
             if (this.extension) {
+                if ("trait".equals(method)) {
+                    throw this.fail(".trait(...) is not available on extend(...) because it would replace the material's existing default traits; use .statTrait(...) instead");
+                }
                 throw this.fail("." + method + "(...) is not available on extend(...); extensions can only add stats to an existing material");
             }
         }

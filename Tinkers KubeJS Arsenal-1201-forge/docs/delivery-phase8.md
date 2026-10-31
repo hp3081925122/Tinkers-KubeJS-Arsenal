@@ -55,13 +55,16 @@ ArsenalMaterialEvents.data(event => {
   // 匠魂已有的材料：只追加属性，不改原有数据
   event.extend('tconstruct:iron')
     .customStat('kubejs:blade', 2, 0, 250)
+    .statTrait('kubejs:blade', 'tconstruct:sharpness', 1)
 })
 ```
 
 | 方法 | 说明 |
 |---|---|
 | `.customStat(statType, ...values)` | 按启动脚本里 `.field` 的顺序填数值，个数必须一致；属性类型没注册或个数不对都会报错 |
-| `event.extend(materialId)` | 给已有材料（匠魂或其他模组的）追加属性。匠魂会把同一材料的多份属性文件逐字段合并，所以原有属性不受影响。`extend` 只能写属性：`.head`、`.customStat`、`.stat` 等；写名称、贴图、词条、等级等会报错 |
+| `event.extend(materialId)` | 给已有材料（匠魂或其他模组的）追加属性或按部件类型特性。匠魂会把同一材料的多份属性文件逐字段合并，所以原有属性不受影响。`extend` 可写属性：`.head`、`.customStat`、`.stat` 等，也可用 `.statTrait(stat, modifier, level)` 写 `perStat` 特性；`.trait(...)` 仍禁止，因为它会整体替换原材料的默认特性。 |
+
+`statTrait` 写入的是 `perStat.<属性类型>`。匠魂对某一部件类型如果存在 `perStat` 特性，就直接使用这份列表，不再叠加 `default` 特性。因此铁的 blade 只写 `.statTrait('kubejs:blade', ...)` 后，该 blade 不会继承铁的默认“磁性”。如果扩展给已有的 `perStat` 属性类型再次写特性，后加载文件会整体替换该属性类型原来的特性列表；这是匠魂数据合并规则，脚本应避免无意覆盖。
 
 新属性类型配合第七期的部件：
 
@@ -99,19 +102,20 @@ event.create('kubejs:great_blade', 'tinkers_kubejs_arsenal:part')
 - `kubejs/material/StatTypeEventJS.java`：启动事件 `ArsenalMaterialEvents.statTypes` 和属性类型链式定义。
 - `kubejs/material/ScriptMaterialStats.java`：脚本属性类型的材料属性实现、数据读写、注册到匠魂。
 - `kubejs/material/MaterialDataEventJS.java`：新增 `.customStat`、`event.extend`。
+- `kubejs/material/MaterialDataEventJS.java`：`extend` 支持 `.statTrait`，并保留 `.trait` 的默认特性替换保护。
 - `kubejs/material/ArsenalMaterialEvents.java`：事件组新增 `statTypes`。
 - `kubejs/ArsenalKubeJSPlugin.java`：启动脚本加载后发布 `statTypes`；生成属性类型名称语言。
 - `TinkersKubejsArsenal.java`：通用初始化时注册属性类型。
 - `mixin/ServerScriptManagerMixin.java`：写入 `extend` 的属性文件。
 - `client/GeneratedMaterialSpriteSource.java`：新属性类型的部件按 `.textureLike` 判断是否生成贴图。
 - `kubejs/probe/ArsenalProbeJSPlugin.java`：补全 `operation`，加入属性类型定义类。
+- `docs/test-phase6-8.md`：记录第六至八期服务端、客户端和联机资源同步测试结果。
 
 ## 验证
 
 - `gradlew compileJava`：通过。
-- 未做游戏内测试，按计划等本项目功能做完后统一测试。
+- 游戏内测试结果见 [test-phase6-8.md](test-phase6-8.md)。
 
 ## 限制
 
 - 手册材料页按匠魂写死的属性类型分页（近战/采掘、远程、护甲、弹药），新属性类型的数值不会出现在材料页里，只在物品提示和工匠台中显示。
-- `extend` 不能给已有材料加特性词条，后续阶段实现。
