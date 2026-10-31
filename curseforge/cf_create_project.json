@@ -1,0 +1,12 @@
+{
+  "name": "Tinkers KubeJS Arsenal",
+  "summary": "Extend Tinkers' Construct with KubeJS: all 66 recipe types, new materials, stat types, parts, tools, bows, armor and scripted modifier events. No Java needed.",
+  "license": "MIT",
+  "dropdowns": [
+    ["Class", "Mods"],
+    ["Main category", "Tinker's Construct"],
+    ["Additional categories", "KubeJS"]
+  ],
+  "description": "description.md",
+  "icon": "icon.png"
+}

@@ -1,10 +1,24 @@
 // 当前文件只保留最小的 Forge 开发、构建和运行配置。
+// 正式环境需要 refmap 才能把原版类的 Mixin 目标映射到 SRG 名
+buildscript {
+    repositories {
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+    }
+}
+
 plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
 }
+
+// 构建时生成 Mixin refmap
+apply plugin: 'org.spongepowered.mixin'
 
 def mcpJarDir = file('E:/模组/我的世界mcp的jar')
 def mcpJarName = 'minecraft-mcp-1.20.1-forge-v0.4.20'
@@ -84,7 +98,14 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// 把 refmap 写入 JAR，供正式环境 Mixin 使用
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+}
+
 dependencies {
+    // Mixin 注解处理器，生成 refmap
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
     // 匠魂附属的核心开发依赖。
     implementation fg.deobf("curse.maven:mantle-74924:${project.mantle_curseforge_file_id}")
