@@ -31,16 +31,18 @@
 
 其他类和方法（部件配方、回收配方、创造栏）用之前先 javap 确认。
 
-### B. 正式客户端 + 游戏交互 MCP（画面类）
+### B. 开发环境 + 游戏交互 MCP（画面类）
 
-开发环境的 `runClient` 不能装游戏交互 MCP 的 jar（它按正式环境编译，进主界面就崩溃）。画面类项目（创造栏、JEI、手册、模型显示）这样测：
+`build.gradle` 已经把 MCP 按 `fg.deobf` 加为运行时依赖（本机存在 `E:\模组\我的世界mcp的jar\minecraft-mcp-1.20.1-forge-v0.4.20.jar` 时生效），`runClient` 直接带上游戏交互 MCP，已验证能进主界面并截图。**不要**再把 MCP jar 放进 `run/mods`。
 
-1. `./gradlew build`，产物在 `build/libs/`。
-2. 用游戏交互 MCP 的 `install_version`（或现有的正式实例）准备 1.20.1 Forge 47.4.23 客户端，装入：本模组 jar、匠魂 3.12.0.220 及 Mantle、KubeJS 2001.6.5 及依赖（Rhino、Architectury）、JEI、`E:\模组\我的世界mcp的jar\minecraft-mcp-1.20.1-forge-v0.4.20.jar`。依赖 jar 从 Gradle 缓存（`~/.gradle/caches/forge_gradle/deobf_dependencies` 是反混淆版，**不能用**）以外的正式版来源取；找不到正式版就停下来问用户。
-3. 把 `run/kubejs/` 下的测试脚本和贴图复制到该实例的 `kubejs/` 目录。
-4. `options.txt` 设 `pauseOnLostFocus:false`，启动后用 MCP 进单人世界，按下面的项目截图。
+1. 确认 `run/options.txt` 里是 `pauseOnLostFocus:false`。
+2. 后台运行 `./gradlew runClient`。如果报 `Failed to validate certificate`，加 `--offline` 重试。
+3. 用 `curl http://127.0.0.1:9876/api/status` 确认接口可用。加载过程中接口就会响应，要等主界面出现再操作。`get_minecraft_status` 对 runClient 启动的客户端会显示未连接，这是正常的，不用管。
+4. 截图用 `screenshot_to_file`，截图文件按下面第 4 节放。
+5. 进单人世界（创造模式、开作弊），按第 2 节的项目操作和截图。
+6. 测完结束客户端进程。
 
-客户端实例放在 `D:\AI临时文件` 下，不要动用户已有的实例。如果 B 准备不起来（缺依赖、下载失败），在报告里写明，并把这些项标为"未测"，**不要标通过**。
+详细说明见 skill `minecraft-mcp`。如果 MCP 连不上或操作失败，在报告里写明原因，相关项标为"未测"，**不要标通过**。
 
 ## 2. 补测项目
 

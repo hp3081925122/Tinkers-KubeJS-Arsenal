@@ -6,11 +6,21 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
 }
 
+def mcpJarDir = file('E:/模组/我的世界mcp的jar')
+def mcpJarName = 'minecraft-mcp-1.20.1-forge-v0.4.20'
+
 repositories {
     maven {
         url = 'https://www.cursemaven.com'
         content {
             includeGroup 'curse.maven'
+        }
+    }
+    // 本机游戏交互 MCP 所在目录，按模块解析才能被 fg.deobf 反混淆。
+    flatDir {
+        dirs mcpJarDir
+        content {
+            includeGroup 'local'
         }
     }
 }
@@ -86,6 +96,10 @@ dependencies {
     implementation fg.deobf("curse.maven:jade-324717:8479276")
     // 开发环境加入 Advanced Loot Info，查看战利品表和村民交易信息。
     implementation fg.deobf("curse.maven:advanced-loot-info-1205426:7451552")
+    // 本机存在游戏交互 MCP 时加入开发环境，便于自动化测试；其他机器没有该文件时跳过。
+    if (new File(mcpJarDir, mcpJarName + '.jar').exists()) {
+        runtimeOnly fg.deobf("local:${mcpJarName}:0.4.20")
+    }
 }
 
 tasks.named('processResources', ProcessResources).configure {
