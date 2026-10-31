@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.MaterialAssetEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.material.ArsenalMaterialEvents;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.StatTypeEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalModifierEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.modifier.ArsenalToolEvents;
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
@@ -26,6 +27,11 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
         RegistryInfo.ITEM.addType(ArsenalToolBuilder.TOOL_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, false));
         RegistryInfo.ITEM.addType(ArsenalToolBuilder.SWORD_TYPE, ArsenalToolBuilder.class, id -> new ArsenalToolBuilder(id, true));
         RegistryInfo.ITEM.addType(ArsenalPartBuilder.TYPE, ArsenalPartBuilder.class, ArsenalPartBuilder::new);
+    }
+
+    @Override
+    public void initStartup() {
+        ArsenalMaterialEvents.STAT_TYPES.post(new StatTypeEventJS());
     }
 
     @Override
@@ -133,6 +139,11 @@ public class ArsenalKubeJSPlugin extends KubeJSPlugin {
 
     @Override
     public void generateLang(LangEventJS event) {
+        for (StatTypeEventJS.StatTypeDefinition type : StatTypeEventJS.TYPES.values()) {
+            String key = "stat." + type.id().getNamespace() + "." + type.id().getPath().replace('/', '.');
+            event.map.put(new LangEventJS.Key(type.id().getNamespace(), "en_us", key), dev.latvian.mods.kubejs.util.UtilsJS.snakeCaseToTitleCase(type.id().getPath()));
+            type.names().forEach((lang, text) -> event.map.put(new LangEventJS.Key(type.id().getNamespace(), lang, key), text));
+        }
         if (this.assets == null) {
             return;
         }

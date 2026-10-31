@@ -9,7 +9,9 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
+import slimeknights.tconstruct.library.materials.stats.MaterialStatsId;
 import java.util.Set;
 
 public class MaterialDataEventJS extends EventJS {
@@ -23,15 +25,30 @@ public class MaterialDataEventJS extends EventJS {
     private static final Set<String> RARITIES = Set.of("common", "uncommon", "rare", "epic");
 
     private final Map<ResourceLocation, MaterialDefinition> materials = new LinkedHashMap<>();
+    private final Map<ResourceLocation, MaterialDefinition> extensions = new LinkedHashMap<>();
 
     public MaterialDefinition create(String id) {
         ResourceLocation key = new ResourceLocation(id);
         if (this.materials.containsKey(key)) {
             throw new IllegalArgumentException("Duplicate material: " + id);
         }
-        MaterialDefinition material = new MaterialDefinition(key);
+        MaterialDefinition material = new MaterialDefinition(key, false);
         this.materials.put(key, material);
         return material;
+    }
+
+    public MaterialDefinition extend(String id) {
+        ResourceLocation key = new ResourceLocation(id);
+        if (this.extensions.containsKey(key)) {
+            throw new IllegalArgumentException("Duplicate material extension: " + id);
+        }
+        MaterialDefinition material = new MaterialDefinition(key, true);
+        this.extensions.put(key, material);
+        return material;
+    }
+
+    public Map<ResourceLocation, MaterialDefinition> getExtensions() {
+        return this.extensions;
     }
 
     public Map<ResourceLocation, MaterialDefinition> getMaterials() {
@@ -52,9 +69,11 @@ public class MaterialDataEventJS extends EventJS {
         private boolean customTextColor;
         private boolean traitsUsed;
         private boolean invalid;
+        private final boolean extension;
 
-        private MaterialDefinition(ResourceLocation id) {
+        private MaterialDefinition(ResourceLocation id, boolean extension) {
             this.id = id;
+            this.extension = extension;
             this.definition.addProperty("craftable", false);
             this.definition.addProperty("tier", 0);
             this.definition.addProperty("sortOrder", 100);
@@ -62,26 +81,31 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition tier(int tier) {
+            this.requireFull("tier");
             this.definition.addProperty("tier", tier);
             return this;
         }
 
         public MaterialDefinition sortOrder(int sortOrder) {
+            this.requireFull("sortOrder");
             this.definition.addProperty("sortOrder", sortOrder);
             return this;
         }
 
         public MaterialDefinition craftable(boolean craftable) {
+            this.requireFull("craftable");
             this.definition.addProperty("craftable", craftable);
             return this;
         }
 
         public MaterialDefinition hidden(boolean hidden) {
+            this.requireFull("hidden");
             this.definition.addProperty("hidden", hidden);
             return this;
         }
 
         public MaterialDefinition rarity(String rarity) {
+            this.requireFull("rarity");
             String value = rarity.toLowerCase(Locale.ROOT);
             if (!RARITIES.contains(value)) {
                 throw this.fail("Invalid material rarity '" + rarity + "', expected common, uncommon, rare or epic");
@@ -182,6 +206,24 @@ public class MaterialDataEventJS extends EventJS {
             return this.emptyStat("fletching");
         }
 
+        public MaterialDefinition customStat(String statType, double... values) {
+            MaterialStatsId id = new MaterialStatsId(statType);
+            StatTypeEventJS.StatTypeDefinition type = StatTypeEventJS.TYPES.get(id);
+            if (type == null) {
+                throw this.fail("Stat type " + id + " is not registered in ArsenalMaterialEvents.statTypes, registered: " + StatTypeEventJS.TYPES.keySet());
+            }
+            List<StatTypeEventJS.Field> fields = type.fields();
+            if (values.length != fields.size()) {
+                throw this.fail("Stat type " + id + " needs " + fields.size() + " values in order " + fields.stream().map(StatTypeEventJS.Field::name).toList() + ", got " + values.length);
+            }
+            JsonObject json = new JsonObject();
+            for (int i = 0; i < values.length; i++) {
+                json.addProperty(fields.get(i).name(), values[i]);
+            }
+            this.stats.add(id.toString(), json);
+            return this;
+        }
+
         public MaterialDefinition stat(String statId, Map<String, Object> values) {
             ResourceLocation stat = new ResourceLocation(statId);
             if ((!statId.contains(":") || "tconstruct".equals(stat.getNamespace())) && BUILT_IN_STATS.contains(stat.getPath())) {
@@ -194,16 +236,19 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition trait(String modifier) {
+            this.requireFull("trait");
             return this.trait(modifier, 1);
         }
 
         public MaterialDefinition trait(String modifier, int level) {
+            this.requireFull("trait");
             this.defaultTraits.add(traitJson(modifier, level));
             this.traitsUsed = true;
             return this;
         }
 
         public MaterialDefinition statTrait(String stat, String modifier, int level) {
+            this.requireFull("statTrait");
             String key = new ResourceLocation(stat).toString();
             JsonArray values = this.perStat.has(key) ? this.perStat.getAsJsonArray(key) : new JsonArray();
             values.add(traitJson(modifier, level));
@@ -213,6 +258,7 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition color(String color) {
+            this.requireFull("color");
             String hex = this.hex(color);
             this.render.addProperty("color", hex);
             if (!this.customTextColor) {
@@ -222,6 +268,7 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition fallbacks(String... fallbacks) {
+            this.requireFull("fallbacks");
             JsonArray values = new JsonArray();
             for (String fallback : fallbacks) {
                 values.add(fallback);
@@ -231,6 +278,7 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition luminosity(int luminosity) {
+            this.requireFull("luminosity");
             if (luminosity < 0 || luminosity > 15) {
                 throw this.fail("Material luminosity must be between 0 and 15");
             }
@@ -239,11 +287,13 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition texture(String texture) {
+            this.requireFull("texture");
             this.render.addProperty("texture", new ResourceLocation(texture).toString());
             return this;
         }
 
         public MaterialDefinition generator(Map<String, Object> generator) {
+            this.requireFull("generator");
             JsonElement value = JsonIO.of(generator);
             if (!value.isJsonObject()) {
                 throw this.fail("generator must be an object");
@@ -257,6 +307,7 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition generator(String... supportedStats) {
+            this.requireFull("generator");
             JsonObject generator = new JsonObject();
             JsonArray stats = new JsonArray();
             for (String stat : supportedStats) {
@@ -276,6 +327,7 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition generatorPalette(Map<String, String> palette) {
+            this.requireFull("generatorPalette");
             JsonElement generator = this.render.get("generator");
             if (generator == null || !generator.isJsonObject() || !generator.getAsJsonObject().has("transformer")) {
                 throw new IllegalStateException("Material " + this.id + ": call generator(...) before generatorPalette(...)");
@@ -292,6 +344,7 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition textColor(String color) {
+            this.requireFull("textColor");
             String hex = this.hex(color);
             if (hex.length() != 6) {
                 throw this.fail("text color must be six hexadecimal digits");
@@ -302,28 +355,34 @@ public class MaterialDataEventJS extends EventJS {
         }
 
         public MaterialDefinition name(String text) {
+            this.requireFull("name");
             return this.name("en_us", text);
         }
 
         public MaterialDefinition name(String lang, String text) {
+            this.requireFull("name");
             this.names.put(lang, text);
             return this;
         }
 
         public MaterialDefinition flavor(String text) {
+            this.requireFull("flavor");
             return this.flavor("en_us", text);
         }
 
         public MaterialDefinition flavor(String lang, String text) {
+            this.requireFull("flavor");
             this.flavors.put(lang, text);
             return this;
         }
 
         public MaterialDefinition encyclopedia(String text) {
+            this.requireFull("encyclopedia");
             return this.encyclopedia("en_us", text);
         }
 
         public MaterialDefinition encyclopedia(String lang, String text) {
+            this.requireFull("encyclopedia");
             this.encyclopedia.put(lang, text);
             return this;
         }
@@ -453,6 +512,12 @@ public class MaterialDataEventJS extends EventJS {
                 throw this.fail("Field '" + key + "' of tconstruct:" + stat + " must be at least 0");
             }
             json.addProperty(key, amount);
+        }
+
+        private void requireFull(String method) {
+            if (this.extension) {
+                throw this.fail("." + method + "(...) is not available on extend(...); extensions can only add stats to an existing material");
+            }
         }
 
         private IllegalArgumentException fail(String message) {

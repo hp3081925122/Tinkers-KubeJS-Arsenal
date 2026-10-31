@@ -18,6 +18,7 @@ public final class TinkersKubejsArsenal {
         MinecraftForge.EVENT_BUS.register(TinkerMaterialNetwork.class);
         context.getModEventBus().addListener(ArsenalEventsModule::register);
         context.getModEventBus().addListener(ArsenalToolTabs::buildContents);
+        context.getModEventBus().addListener(com.hp.tinkers_kubejs_arsenal.kubejs.material.ScriptMaterialStats::register);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> context.getModEventBus().addListener(com.hp.tinkers_kubejs_arsenal.client.SyncedMaterialClient::addPackFinders));
     }
 }

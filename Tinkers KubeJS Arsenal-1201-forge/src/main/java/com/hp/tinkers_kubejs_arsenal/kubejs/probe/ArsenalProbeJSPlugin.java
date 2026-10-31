@@ -76,6 +76,7 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
         Map.entry("slotType", "Special." + TinkerTypes.SLOT_NAME),
         Map.entry("direction", "\"pitch\" | \"height\" | \"side_hit\""),
         Map.entry("partItem", "Special." + TinkerTypes.TOOL_PART_NAME),
+        Map.entry("operation", "\"base\" | \"add\" | \"percent\" | \"multiply\""),
         Map.entry("statType", "\"head\" | \"handle\" | \"binding\" | \"limb\" | \"grip\" | \"bowstring\" | \"plating_helmet\" | \"plating_chestplate\" | \"plating_leggings\" | \"plating_boots\" | \"plating_shield\" | \"maille\" | \"skull\" | \"arrow_head\" | \"arrow_shaft\" | \"fletching\" | Special." + TinkerTypes.MATERIAL_STAT_NAME + " | (string & {})"),
         Map.entry("toolActions", "(\"pickaxe_dig\" | \"axe_dig\" | \"shovel_dig\" | \"hoe_dig\" | \"sword_dig\" | \"shears_dig\" | \"axe_strip\" | \"shovel_flatten\" | \"hoe_till\" | \"sword_sweep\" | \"shield_block\" | (string & {}))[]"),
         Map.entry("blockTag", "Special.BlockTag | `#${Special.BlockTag}`"),
@@ -99,7 +100,7 @@ public class ArsenalProbeJSPlugin extends KubeJSPlugin {
             doc.specialType(TinkerTypes.MODIFIABLE_NAME, literals(items(item -> item instanceof IModifiable), false));
             doc.specialType(TinkerTypes.TOOL_STAT_NAME, literals(ToolStats.getAllStats().stream().map(stat -> stat.getName().toString()), true));
             doc.specialType(TinkerTypes.ATTRIBUTE_NAME, literals(ForgeRegistries.ATTRIBUTES.getKeys().stream().map(Object::toString), true));
-            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class, ArsenalToolBuilder.class, ArsenalPartBuilder.class, ToolDataEventJS.ToolDefinitionJS.class)) {
+            for (Class<?> recipeClass : List.of(MeltingRecipeJS.class, CastingRecipeJS.class, AlloyRecipeJS.class, ModifierRecipeJS.class, MaterialDataEventJS.MaterialDefinition.class, MaterialAssetEventJS.MaterialAsset.class, MaterialTagEventJS.MaterialTag.class, ModifierDataEventJS.ModifierDefinition.class, ToolStatsEventJS.class, ModifierHookEvents.AttributesEventJS.class, ArsenalTool.class, ArsenalToolBuilder.class, ArsenalPartBuilder.class, com.hp.tinkers_kubejs_arsenal.kubejs.material.StatTypeEventJS.StatTypeDefinition.class, ToolDataEventJS.ToolDefinitionJS.class)) {
                 doc.transformDocument(recipeClass, ArsenalProbeJSPlugin::describeParams);
             }
             return null;

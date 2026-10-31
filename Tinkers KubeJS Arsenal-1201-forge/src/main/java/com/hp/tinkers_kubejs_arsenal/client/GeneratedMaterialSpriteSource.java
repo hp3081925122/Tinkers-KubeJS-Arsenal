@@ -1,6 +1,7 @@
 package com.hp.tinkers_kubejs_arsenal.client;
 
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalToolBuilder;
+import com.hp.tinkers_kubejs_arsenal.kubejs.material.StatTypeEventJS;
 import com.hp.tinkers_kubejs_arsenal.kubejs.tool.ArsenalPartBuilder;
 import net.minecraftforge.registries.ForgeRegistries;
 import slimeknights.tconstruct.library.tools.part.IToolPart;
@@ -122,7 +123,7 @@ public class GeneratedMaterialSpriteSource implements SpriteSource {
             String textureSuffix = this.textureSuffix(materialTexture);
             Set<MaterialStatsId> supportedStats = this.supportedStats(generatorJson);
             for (Part part : parts) {
-                if ((generator.isVariant() && part.skipVariants()) || (!generatorJson.has("ignore_material_stats") || !generatorJson.get("ignore_material_stats").getAsBoolean()) && !supportedStats.contains(part.statType())) {
+                if ((generator.isVariant() && part.skipVariants()) || (!generatorJson.has("ignore_material_stats") || !generatorJson.get("ignore_material_stats").getAsBoolean()) && !supportedStats.contains(part.statType()) && !(StatTypeEventJS.TYPES.containsKey(part.statType()) && supportedStats.contains(StatTypeEventJS.TYPES.get(part.statType()).textureStat()))) {
                     continue;
                 }
                 NativeImage source = this.loadSource(manager, part.path(), json);

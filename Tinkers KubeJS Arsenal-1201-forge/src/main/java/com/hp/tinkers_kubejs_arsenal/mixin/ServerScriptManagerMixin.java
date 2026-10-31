@@ -63,6 +63,18 @@ public abstract class ServerScriptManagerMixin {
                 }
                 added = true;
             }
+            for (MaterialDataEventJS.MaterialDefinition extension : data.getExtensions().values()) {
+                if (extension.isInvalid()) {
+                    ConsoleJS.SERVER.error("Material extension " + extension.id() + " was not generated because it has errors");
+                    continue;
+                }
+                if (extension.stats().size() > 0) {
+                    JsonObject stats = new JsonObject();
+                    stats.add("stats", extension.stats());
+                    add(pack, extension.id(), "stats", stats);
+                    added = true;
+                }
+            }
             ModifierDataEventJS modifiers = new ModifierDataEventJS();
             ArsenalModifierEvents.DATA.post(modifiers);
             for (ModifierDataEventJS.ModifierDefinition modifier : modifiers.getModifiers().values()) {

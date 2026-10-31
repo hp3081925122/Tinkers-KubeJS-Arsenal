@@ -24,7 +24,7 @@ StartupEvents.registry('item', event => {
 | 方法 | 说明 |
 |---|---|
 | 类型 `tinkers_kubejs_arsenal:part` | 匠魂 `ToolPartItem` |
-| `.statType(statType)` | 必填。用哪类材料属性，决定哪些材料能做、部件提供哪些数值；不带命名空间时补 `tconstruct:`。可用 `head`、`handle`、`binding`、`limb`、`grip`、`bowstring`、`plating_*`、`maille`、`skull`、`arrow_head`、`arrow_shaft`、`fletching` 等已有类型 |
+| `.statType(statType)` | 必填。用哪类材料属性，决定哪些材料能做、部件提供哪些数值；不带命名空间时补 `tconstruct:`。可用 `head`、`handle`、`binding`、`limb`、`grip`、`bowstring`、`plating_*`、`maille`、`skull`、`arrow_head`、`arrow_shaft`、`fletching` 等已有类型，或第八期注册的新类型（写完整 ID） |
 | `.cost(n)` | 材料消耗，单位和匠魂相同（1 = 一锭），默认 1，不能小于 1 |
 | `.casts()` | 同时注册金、沙、红沙三种铸模；不写就只能在部件制作台用材料直接做 |
 | `.partTexture(texture)` | 改部件灰度底图路径，默认 `<命名空间>:item/part/<路径>` |
@@ -87,6 +87,4 @@ StartupEvents.registry('item', event => {
 
 ## 限制
 
-- 只能用已有的材料属性类型；新增属性类型后续阶段实现。
-- 部件回收配方（工具拆回部件）后续阶段实现。
-- 手册部件页后续阶段实现。
+- 新增材料属性类型、工具回收、手册部件的情况见第八期 `delivery-phase8.md`。
