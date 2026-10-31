@@ -35,7 +35,7 @@
 ArsenalMaterialEvents.data(event => {
   event.create('kubejs:mythril')
     .tier(3)
-    .head({ durability: 600, mining_speed: 7.5, mining_tier: 'minecraft:diamond', melee_attack: 3 })
+    .head(600, 7.5, 'minecraft:diamond', 3)
     .color('6FD0E8')
     .fallbacks('metal')
     .name('Mythril')

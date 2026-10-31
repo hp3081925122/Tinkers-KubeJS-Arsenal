@@ -53,13 +53,18 @@ KubeJS 物品构建器自带的方法（`.tag`、`.rarity` 等）照常可用。
 ```js
 ArsenalToolEvents.data(event => {
   event.create('kubejs:war_pick')
-    .baseStats({ attack_damage: 2, attack_speed: 1.0 })
-    .multiplyStats({ durability: 1.2, mining_speed: 0.8 })
-    .slots({ upgrades: 3, abilities: 1 })
+    .baseStat('attack_damage', 2)
+    .baseStat('attack_speed', 1.0)
+    .multiplyStat('durability', 1.2)
+    .multiplyStat('mining_speed', 0.8)
+    .slot('upgrades', 3)
+    .slot('abilities', 1)
     .trait('tconstruct:pierce', 1)
     .toolActions('pickaxe_dig')
     .effective('minecraft:mineable/pickaxe')
-    .boxAoe({ expansion_direction: 'tconstruct:pitch', expansions: [{ depth: 2 }, { height: 1 }] })
+    .boxAoeDirection('pitch')
+    .boxAoeExpansion(0, 0, 2)
+    .boxAoeExpansion(0, 1, 0)
     .modifiable('melee/weapon', 'harvest/primary', 'harvest/stone', 'aoe', 'small', 'interactable/right')
     .materialName(0)
 })
@@ -67,15 +72,21 @@ ArsenalToolEvents.data(event => {
 
 | 方法 | 生成的匠魂模块或数据 |
 |---|---|
-| `.baseStats({...})` | `tconstruct:base_stats`；键不带命名空间时补 `tconstruct:` |
-| `.multiplyStats({...})` | `tconstruct:multiply_stats` |
-| `.slots({...})` | `tconstruct:modifier_slots`，值为不小于 0 的整数 |
+| `.baseStat(toolStat, value)` | `tconstruct:base_stats`，可多次调用；属性 ID 不带命名空间时补 `tconstruct:` |
+| `.multiplyStat(toolStat, value)` | `tconstruct:multiply_stats`，可多次调用 |
+| `.slot(slotType, count)` | `tconstruct:modifier_slots`，`count` 不小于 0 |
 | `.trait(modifier)` / `.trait(modifier, level)` | `tconstruct:traits` |
 | `.toolActions(...)` | `tconstruct:tool_actions` |
 | `.effective(blockTag)` | `tconstruct:is_effective`，用 `mantle:tag` 判断方块标签，可带或不带 `#` |
-| `.boxAoe` / `.circleAoe` / `.veinAoe` / `.treeAoe` | 对应 `tconstruct:*_aoe`，参数对象原样写入，字段和匠魂 JSON 一致 |
-| `.sweepMelee` / `.circleMelee` | 对应 `tconstruct:sweep_melee`、`tconstruct:circle_melee` |
-| `.module(type, options)` | 任意匠魂工具模块 |
+| `.boxAoe(width, height, depth)` | `tconstruct:box_aoe` 的基础范围（`bonus`），在 1 格之外额外扩展的格数 |
+| `.boxAoeExpansion(width, height, depth)` | `tconstruct:box_aoe` 的 `expansions`，每级"扩展"词条按顺序轮流使用一条，可多次调用 |
+| `.boxAoeDirection(direction)` | `expansion_direction`：`pitch`、`height`、`side_hit`，默认 `side_hit` |
+| `.circleAoe(diameter, threeDimensional)` | `tconstruct:circle_aoe` |
+| `.veinAoe(maxDistance)` | `tconstruct:vein_aoe` |
+| `.treeAoe(widthBonus, depthBonus)` | `tconstruct:tree_aoe` |
+| `.sweepMelee(range)` | `tconstruct:sweep_melee` |
+| `.circleMelee(diameter)` | `tconstruct:circle_melee` |
+| `.module(type, options)` | 任意匠魂工具模块，`options` 原样写入；专用方法覆盖不到时使用 |
 | `.primaryPart(index)` | `part_stats` 的主部件，默认 0 |
 | `.materialName(index)` | `tconstruct:fixed_material_name`，工具名称跟随第几个部件的材料 |
 | `.modifiable(...)` | 加入 `tconstruct:modifiable/<路径>` 物品标签，决定能加哪类词条 |
@@ -90,13 +101,19 @@ ArsenalToolEvents.data(event => {
 - 工作台布局 `tinkering/station_layouts/<路径>.json`：1 到 4 个部件按匠魂预设位置摆放（4 个部件照阔斧），超过 4 个部件必须给多出的部件写 `.layoutSlot`；超过 3 个部件时匠魂会要求用铁砧组装；
 - 组装配方 `recipes/tools/building/<路径>.json`（`tconstruct:tool_building`）。
 
+## 匠魂创造栏与 JEI
+
+- 匠魂"工具"创造栏：每把自定义工具按材料列出全部变体，做法和匠魂自带工具一样（`ToolBuildHandler.addVariants`）。
+- KubeJS 创造栏：KubeJS 默认会把每个 KubeJS 物品的无材料版本放进自己的创造栏，这种工具没有材料、模型显示不正常，所以从 KubeJS 创造栏里移除。
+- JEI：不需要单独接入。匠魂的 JEI 插件会给 `tconstruct:modifiable/multipart` 标签里的物品注册工具子类型，自定义工具已自动加入该标签；JEI 的物品列表取自创造栏内容，因此各材料变体会显示出来；生成的 `tconstruct:tool_building` 配方会出现在匠魂的"工具组装"配方页里。
+
 ## 输入检查
 
 以下情况报英文错误并跳过这把工具：
 
 - `ArsenalToolEvents.data` 里的 ID 没有在启动脚本用本模组的工具类型注册；
 - 部件物品不是匠魂部件；
-- 属性值不是数字、词条槽不是非负整数、词条等级小于 1；
+- 词条槽数量小于 0、词条等级小于 1；
 - 部件序号超出范围；
 - 部件超过 4 个却没写 `.layoutSlot`。
 
@@ -106,6 +123,8 @@ ArsenalToolEvents.data(event => {
 
 - `kubejs/tool/ArsenalToolBuilder.java`：两种物品类型的构建器、模型 JSON 生成、多语言名称。
 - `kubejs/tool/ToolDataEventJS.java`：`ArsenalToolEvents.data` 事件和工具定义链式对象。
+- `kubejs/tool/ArsenalToolTabs.java`：匠魂工具创造栏添加材料变体，KubeJS 创造栏移除无材料版本。
+- `TinkersKubejsArsenal.java`：注册创造栏事件监听。
 - `kubejs/modifier/ArsenalToolEvents.java`：事件组新增 `data`。
 - `kubejs/ArsenalKubeJSPlugin.java`：`init()` 注册物品类型。
 - `mixin/ServerScriptManagerMixin.java`：写入工具定义、工作台布局、组装配方和可改造标签。
@@ -121,5 +140,5 @@ ArsenalToolEvents.data(event => {
 
 - 只支持普通工具和剑；弓弩、护甲、盾牌、法杖等后续阶段实现。
 - 只能复用已有的部件；新部件形状后续阶段实现。
-- 生成的部件贴图数量约为"材料数 × 部件数"，每把工具约数百张，会增加资源重载时间和内存。
-- 匠魂创造模式物品栏、JEI 子类型和匠魂手册条目未接入，后续阶段实现。
+- 部件贴图数量为"材料数 × 部件数"，和匠魂自带工具相同：匠魂的镐子在 jar 里预先放了 246 张部件贴图。区别只在于匠魂是打包时生成好的，本模组在每次资源重载时现场生成；单张贴图很小，生成开销和占用的图集空间都不大。
+- 匠魂手册条目未接入，后续阶段实现。

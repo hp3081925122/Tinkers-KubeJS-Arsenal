@@ -54,6 +54,7 @@ public class ToolDataEventJS extends EventJS {
         private final List<JsonObject> modules = new ArrayList<>();
         private final Set<String> modifiable = new LinkedHashSet<>();
         private final Map<Integer, int[]> layoutSlots = new LinkedHashMap<>();
+        private JsonObject box;
         private int primaryPart;
         private int materialName = -1;
         private int sortIndex = 100;
@@ -64,23 +65,21 @@ public class ToolDataEventJS extends EventJS {
             this.builder = builder;
         }
 
-        public ToolDefinitionJS baseStats(Map<String, Object> toolStats) {
-            this.putStats(this.baseStats, toolStats, "baseStats");
+        public ToolDefinitionJS baseStat(String toolStat, double value) {
+            this.baseStats.addProperty(statId(toolStat), value);
             return this;
         }
 
-        public ToolDefinitionJS multiplyStats(Map<String, Object> toolStats) {
-            this.putStats(this.multipliers, toolStats, "multiplyStats");
+        public ToolDefinitionJS multiplyStat(String toolStat, double value) {
+            this.multipliers.addProperty(statId(toolStat), value);
             return this;
         }
 
-        public ToolDefinitionJS slots(Map<String, Object> slots) {
-            slots.forEach((slot, value) -> {
-                if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue()) || number.intValue() < 0) {
-                    throw this.fail("Slot count for '" + slot + "' must be a whole number of at least 0");
-                }
-                this.slots.addProperty(slot, number.intValue());
-            });
+        public ToolDefinitionJS slot(String slotType, int count) {
+            if (count < 0) {
+                throw this.fail("Slot count for '" + slotType + "' must be at least 0");
+            }
+            this.slots.addProperty(slotType, count);
             return this;
         }
 
@@ -113,28 +112,51 @@ public class ToolDataEventJS extends EventJS {
             return this.add("tconstruct:is_effective", json);
         }
 
-        public ToolDefinitionJS boxAoe(Map<String, Object> options) {
-            return this.module("tconstruct:box_aoe", options);
+        public ToolDefinitionJS boxAoe(int width, int height, int depth) {
+            this.box().add("bonus", boxSize(width, height, depth));
+            return this;
         }
 
-        public ToolDefinitionJS circleAoe(Map<String, Object> options) {
-            return this.module("tconstruct:circle_aoe", options);
+        public ToolDefinitionJS boxAoeExpansion(int width, int height, int depth) {
+            this.box().getAsJsonArray("expansions").add(boxSize(width, height, depth));
+            return this;
         }
 
-        public ToolDefinitionJS veinAoe(Map<String, Object> options) {
-            return this.module("tconstruct:vein_aoe", options);
+        public ToolDefinitionJS boxAoeDirection(String direction) {
+            this.box().addProperty("expansion_direction", new ResourceLocation(direction.contains(":") ? direction : "tconstruct:" + direction).toString());
+            return this;
         }
 
-        public ToolDefinitionJS treeAoe(Map<String, Object> options) {
-            return this.module("tconstruct:tree_aoe", options);
+        public ToolDefinitionJS circleAoe(int diameter, boolean threeDimensional) {
+            JsonObject json = new JsonObject();
+            json.addProperty("3D", threeDimensional);
+            json.addProperty("diameter", diameter);
+            return this.add("tconstruct:circle_aoe", json);
         }
 
-        public ToolDefinitionJS sweepMelee(Map<String, Object> options) {
-            return this.module("tconstruct:sweep_melee", options);
+        public ToolDefinitionJS veinAoe(int maxDistance) {
+            JsonObject json = new JsonObject();
+            json.addProperty("max_distance", maxDistance);
+            return this.add("tconstruct:vein_aoe", json);
         }
 
-        public ToolDefinitionJS circleMelee(Map<String, Object> options) {
-            return this.module("tconstruct:circle_melee", options);
+        public ToolDefinitionJS treeAoe(int widthBonus, int depthBonus) {
+            JsonObject json = new JsonObject();
+            json.addProperty("width_bonus", widthBonus);
+            json.addProperty("depth_bonus", depthBonus);
+            return this.add("tconstruct:tree_aoe", json);
+        }
+
+        public ToolDefinitionJS sweepMelee(double range) {
+            JsonObject json = new JsonObject();
+            json.addProperty("range", range);
+            return this.add("tconstruct:sweep_melee", json);
+        }
+
+        public ToolDefinitionJS circleMelee(double diameter) {
+            JsonObject json = new JsonObject();
+            json.addProperty("diameter", diameter);
+            return this.add("tconstruct:circle_melee", json);
         }
 
         public ToolDefinitionJS module(String type, Map<String, Object> options) {
@@ -288,13 +310,27 @@ public class ToolDataEventJS extends EventJS {
             }
         }
 
-        private void putStats(JsonObject target, Map<String, Object> toolStats, String method) {
-            toolStats.forEach((stat, value) -> {
-                if (!(value instanceof Number number)) {
-                    throw this.fail(method + " value for '" + stat + "' must be a number");
-                }
-                target.addProperty(stat.contains(":") ? new ResourceLocation(stat).toString() : "tconstruct:" + stat, number.doubleValue());
-            });
+        private JsonObject box() {
+            if (this.box == null) {
+                JsonObject json = new JsonObject();
+                json.addProperty("expansion_direction", "tconstruct:side_hit");
+                json.add("expansions", new JsonArray());
+                this.box = typed("tconstruct:box_aoe", json);
+                this.modules.add(this.box);
+            }
+            return this.box;
+        }
+
+        private static JsonObject boxSize(int width, int height, int depth) {
+            JsonObject json = new JsonObject();
+            json.addProperty("width", width);
+            json.addProperty("height", height);
+            json.addProperty("depth", depth);
+            return json;
+        }
+
+        private static String statId(String toolStat) {
+            return toolStat.contains(":") ? new ResourceLocation(toolStat).toString() : "tconstruct:" + toolStat;
         }
 
         private ToolDefinitionJS add(String type, JsonObject json) {

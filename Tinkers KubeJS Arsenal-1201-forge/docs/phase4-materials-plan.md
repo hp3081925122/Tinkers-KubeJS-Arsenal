@@ -152,13 +152,13 @@ ArsenalMaterialEvents.data(event => {
     .sortOrder(5)                // 可省略，默认 100
     .hidden(false)               // 可省略
     .rarity('rare')              // 可省略，默认按 tier 计算
-    .head({ durability: 600, mining_speed: 7.5, mining_tier: 'minecraft:diamond', melee_attack: 3 })
-    .handle({ durability: 0.1, melee_speed: 0.05 })
+    .head(600, 7.5, 'minecraft:diamond', 3)
+    .handle(0.1, 0, 0.05, 0)
     .binding()
-    .limb({ durability: 600, draw_speed: -0.1, velocity: 0.1 })
-    .grip({ durability: 0.1, accuracy: 0.05, melee_damage: 2 })
+    .limb(600, -0.1, 0.1, 0)
+    .grip(0.1, 0.05, 2)
     .bowstring()
-    .platingChestplate({ durability: 300, armor: 6, toughness: 1 })
+    .platingChestplate(300, 6, 1, 0)
     .maille()
     .trait('tconstruct:magnetic')                              // 默认特性，等级 1
     .trait('tconstruct:sharpness', 2)                          // 默认特性，等级 2
@@ -173,20 +173,30 @@ ArsenalMaterialEvents.data(event => {
 | `event.create(id)` | | S2：唯一的构造参数。同一次重载里重复创建同一个 ID 时抛错 |
 | `.tier(int)` `.sortOrder(int)` `.craftable(boolean)` `.hidden(boolean)` | definition | |
 | `.rarity(String)` | definition | 只接受 `common`/`uncommon`/`rare`/`epic`，其他值抛错 |
-| 23 个属性方法（见 5.3） | stats | 有字段的属性类型收一个对象参数；无字段的属性类型不收参数 |
+| 23 个属性方法（见 5.3） | stats | 有字段的属性类型按位置传参，顺序与匠魂属性类构造方法一致；无字段的属性类型不收参数 |
 | `.stat(String statId, Map values)` | stats | **只用于第三方模组注册的属性类型**；传入 TC 自带的 23 种之一时抛错，提示改用专用方法（S1） |
 | `.trait(String modifier)` / `.trait(String modifier, int level)` | traits.default | 追加（S5） |
 | `.statTrait(String stat, String modifier, int level)` | traits.perStat | 追加；**交付说明和 JS 注释都要写明：写了 perStat 的属性类型不再继承 default** |
 
 ### 5.3 属性方法名
 
-方法名是属性 ID 的驼峰形式：`head`、`handle`、`grip`、`limb`、`platingHelmet`、`platingChestplate`、`platingLeggings`、`platingBoots`、`platingShield`、`skull`、`slime`、`ribcage`、`shell`、`laces`（以上 14 个收对象参数），以及 `binding`、`bowstring`、`maille`、`shieldCore`、`repairKit`、`cuirass`、`arrowHead`、`arrowShaft`、`fletching`（以上 9 个无参数），共 23 个，**必须和 `MaterialRegistry` 的注册项一一对应**，交付说明里列出对照表。
+方法名是属性 ID 的驼峰形式：`head`、`handle`、`grip`、`limb`、`platingHelmet`、`platingChestplate`、`platingLeggings`、`platingBoots`、`platingShield`、`skull`、`slime`、`ribcage`、`shell`、`laces`（以上 14 个按位置传参），以及 `binding`、`bowstring`、`maille`、`shieldCore`、`repairKit`、`cuirass`、`arrowHead`、`arrowShaft`、`fletching`（以上 9 个无参数），共 23 个，**必须和 `MaterialRegistry` 的注册项一一对应**，交付说明里列出对照表。
 
-对象参数的要求：
+参数顺序（2026年10月31日由对象参数改为按位置传参，与匠魂属性类构造方法一致）：
 
-- 键名直接用 TC 的 JSON 字段名（蛇形，例如 `mining_speed`），不另起名字，避免和 TC 文档对不上；
-- 写入前按 TC 的 `LOADABLE` 校验：未知字段名抛错（防止拼错字段名后被静默忽略），缺少必填字段抛错，数值超出范围（如 `durability < 1`）抛错；
-- 校验逻辑**不要手写字段表**：直接用对应属性类型的 `MaterialStatType.getLoadable()`（或 TC 中等价的接口，实施前核对）对 JSON 做一次 `deserialize`，失败时把 TC 的异常信息包装成英文的 `IllegalArgumentException` 抛出。未知字段名 TC 不会报错，这一项需要单独检查：用该 Loadable 序列化默认值得到合法键集合，或用其他可靠办法得到合法键集合，实施时说明用了哪种。
+| 方法 | 参数 |
+|---|---|
+| `head` | `durability, miningSpeed, miningTier, meleeAttack` |
+| `handle` | `durability, miningSpeed, meleeSpeed, meleeDamage` |
+| `grip` | `durability, accuracy, meleeDamage` |
+| `limb` | `durability, drawSpeed, velocity, accuracy` |
+| `platingHelmet` / `platingChestplate` / `platingLeggings` / `platingBoots` | `durability, armor, toughness, knockbackResistance` |
+| `platingShield` | `durability, toughness, knockbackResistance` |
+| `skull` | `durability, armor` |
+| `slime` | `durability, overslimeCapacity` |
+| `ribcage` / `shell` / `laces` | `repairAmount` |
+
+写入时仍按字段做校验：整数字段不是整数、数值低于下限（如 `durability < 1`）、挖掘等级不是合法 ID 时抛错。
 
 ### 5.4 生成规则
 
@@ -239,7 +249,7 @@ ArsenalMaterialEvents.assets(event => {
 
 沿用 `ArsenalProbeJSPlugin` 的做法：
 
-- 对象参数按**参数名**补全类型（S11）。23 种属性方法的参数名分别是 `headStats`、`handleStats`……（具体名单在交付说明里列出），在 `PARAM_TYPES` 里登记对应的对象类型，例如 `headStats` 登记为 `{durability: number, mining_speed?: number, mining_tier?: Special.TinkerHarvestTier, melee_attack?: number}`。
+- 属性方法按位置传参，参数顺序与匠魂属性类的构造方法一致，例如 `.head(durability, miningSpeed, miningTier, meleeAttack)`；`miningTier` 参数补全为 `Special.TinkerHarvestTier`（2026年10月31日改为链式写法，原先的对象参数写法已删除）。
 - 新增特殊类型 `Special.TinkerHarvestTier`：挖掘等级 ID，从 Forge `TierSortingRegistry.getSortedTiers()` 取 ID，封闭列表。
 - `statTrait` 的 `stat` 参数：用已有的 `Special.TinkerMaterialStat`，加上 `perStat` 支持的分组 ID（第 2.3 节）。
 - `trait`、`statTrait` 的 `modifier` 参数：用已有的 `Special.TinkerModifier`。

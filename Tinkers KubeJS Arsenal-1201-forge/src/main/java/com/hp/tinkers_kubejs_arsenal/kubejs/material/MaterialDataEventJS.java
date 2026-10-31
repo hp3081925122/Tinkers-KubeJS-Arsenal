@@ -90,60 +90,60 @@ public class MaterialDataEventJS extends EventJS {
             return this;
         }
 
-        public MaterialDefinition head(Map<String, Object> headStats) {
-            return this.stat("head", headStats, Map.of("durability", INT_MIN_ONE, "mining_speed", FLOAT, "mining_tier", TIER, "melee_attack", FLOAT), "durability");
+        public MaterialDefinition head(double durability, double miningSpeed, String miningTier, double meleeAttack) {
+            return this.stat("head", values("durability", durability, "mining_speed", miningSpeed, "mining_tier", miningTier, "melee_attack", meleeAttack), Map.of("durability", INT_MIN_ONE, "mining_speed", FLOAT, "mining_tier", TIER, "melee_attack", FLOAT), "durability");
         }
 
-        public MaterialDefinition handle(Map<String, Object> handleStats) {
-            return this.stat("handle", handleStats, Map.of("durability", FLOAT, "mining_speed", FLOAT, "melee_speed", FLOAT, "melee_damage", FLOAT));
+        public MaterialDefinition handle(double durability, double miningSpeed, double meleeSpeed, double meleeDamage) {
+            return this.stat("handle", values("durability", durability, "mining_speed", miningSpeed, "melee_speed", meleeSpeed, "melee_damage", meleeDamage), Map.of("durability", FLOAT, "mining_speed", FLOAT, "melee_speed", FLOAT, "melee_damage", FLOAT));
         }
 
-        public MaterialDefinition grip(Map<String, Object> gripStats) {
-            return this.stat("grip", gripStats, Map.of("durability", FLOAT, "accuracy", FLOAT, "melee_damage", FLOAT_MIN_ZERO));
+        public MaterialDefinition grip(double durability, double accuracy, double meleeDamage) {
+            return this.stat("grip", values("durability", durability, "accuracy", accuracy, "melee_damage", meleeDamage), Map.of("durability", FLOAT, "accuracy", FLOAT, "melee_damage", FLOAT_MIN_ZERO));
         }
 
-        public MaterialDefinition limb(Map<String, Object> limbStats) {
-            return this.stat("limb", limbStats, Map.of("durability", INT_MIN_ONE, "draw_speed", FLOAT, "velocity", FLOAT, "accuracy", FLOAT), "durability");
+        public MaterialDefinition limb(double durability, double drawSpeed, double velocity, double accuracy) {
+            return this.stat("limb", values("durability", durability, "draw_speed", drawSpeed, "velocity", velocity, "accuracy", accuracy), Map.of("durability", INT_MIN_ONE, "draw_speed", FLOAT, "velocity", FLOAT, "accuracy", FLOAT), "durability");
         }
 
-        public MaterialDefinition platingHelmet(Map<String, Object> platingStats) {
-            return this.plating("plating_helmet", platingStats);
+        public MaterialDefinition platingHelmet(double durability, double armor, double toughness, double knockbackResistance) {
+            return this.plating("plating_helmet", durability, armor, toughness, knockbackResistance);
         }
 
-        public MaterialDefinition platingChestplate(Map<String, Object> platingStats) {
-            return this.plating("plating_chestplate", platingStats);
+        public MaterialDefinition platingChestplate(double durability, double armor, double toughness, double knockbackResistance) {
+            return this.plating("plating_chestplate", durability, armor, toughness, knockbackResistance);
         }
 
-        public MaterialDefinition platingLeggings(Map<String, Object> platingStats) {
-            return this.plating("plating_leggings", platingStats);
+        public MaterialDefinition platingLeggings(double durability, double armor, double toughness, double knockbackResistance) {
+            return this.plating("plating_leggings", durability, armor, toughness, knockbackResistance);
         }
 
-        public MaterialDefinition platingBoots(Map<String, Object> platingStats) {
-            return this.plating("plating_boots", platingStats);
+        public MaterialDefinition platingBoots(double durability, double armor, double toughness, double knockbackResistance) {
+            return this.plating("plating_boots", durability, armor, toughness, knockbackResistance);
         }
 
-        public MaterialDefinition platingShield(Map<String, Object> shieldStats) {
-            return this.stat("plating_shield", shieldStats, Map.of("durability", INT_MIN_ONE, "toughness", FLOAT, "knockback_resistance", FLOAT), "durability");
+        public MaterialDefinition platingShield(double durability, double toughness, double knockbackResistance) {
+            return this.stat("plating_shield", values("durability", durability, "toughness", toughness, "knockback_resistance", knockbackResistance), Map.of("durability", INT_MIN_ONE, "toughness", FLOAT, "knockback_resistance", FLOAT), "durability");
         }
 
-        public MaterialDefinition skull(Map<String, Object> skullStats) {
-            return this.stat("skull", skullStats, Map.of("durability", INT_MIN_ONE, "armor", INT_MIN_ZERO), "durability");
+        public MaterialDefinition skull(double durability, double armor) {
+            return this.stat("skull", values("durability", durability, "armor", armor), Map.of("durability", INT_MIN_ONE, "armor", INT_MIN_ZERO), "durability");
         }
 
-        public MaterialDefinition slime(Map<String, Object> slimeStats) {
-            return this.stat("slime", slimeStats, Map.of("durability", INT_MIN_ONE, "overslime_capacity", INT_MIN_ZERO), "durability", "overslime_capacity");
+        public MaterialDefinition slime(double durability, double overslimeCapacity) {
+            return this.stat("slime", values("durability", durability, "overslime_capacity", overslimeCapacity), Map.of("durability", INT_MIN_ONE, "overslime_capacity", INT_MIN_ZERO), "durability", "overslime_capacity");
         }
 
-        public MaterialDefinition ribcage(Map<String, Object> repairStats) {
-            return this.repair("ribcage", repairStats);
+        public MaterialDefinition ribcage(double repairAmount) {
+            return this.repair("ribcage", repairAmount);
         }
 
-        public MaterialDefinition shell(Map<String, Object> repairStats) {
-            return this.repair("shell", repairStats);
+        public MaterialDefinition shell(double repairAmount) {
+            return this.repair("shell", repairAmount);
         }
 
-        public MaterialDefinition laces(Map<String, Object> repairStats) {
-            return this.repair("laces", repairStats);
+        public MaterialDefinition laces(double repairAmount) {
+            return this.repair("laces", repairAmount);
         }
 
         public MaterialDefinition binding() {
@@ -387,12 +387,20 @@ public class MaterialDataEventJS extends EventJS {
             return !this.render.entrySet().isEmpty() || this.textColor != null || !this.names.isEmpty() || !this.flavors.isEmpty() || !this.encyclopedia.isEmpty();
         }
 
-        private MaterialDefinition plating(String name, Map<String, Object> values) {
-            return this.stat(name, values, Map.of("durability", INT_MIN_ONE, "armor", FLOAT, "toughness", FLOAT, "knockback_resistance", FLOAT), "durability");
+        private MaterialDefinition plating(String name, double durability, double armor, double toughness, double knockbackResistance) {
+            return this.stat(name, values("durability", durability, "armor", armor, "toughness", toughness, "knockback_resistance", knockbackResistance), Map.of("durability", INT_MIN_ONE, "armor", FLOAT, "toughness", FLOAT, "knockback_resistance", FLOAT), "durability");
         }
 
-        private MaterialDefinition repair(String name, Map<String, Object> values) {
-            return this.stat(name, values, Map.of("repair_amount", INT_MIN_ONE), "repair_amount");
+        private MaterialDefinition repair(String name, double repairAmount) {
+            return this.stat(name, values("repair_amount", repairAmount), Map.of("repair_amount", INT_MIN_ONE), "repair_amount");
+        }
+
+        private static Map<String, Object> values(Object... entries) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            for (int i = 0; i < entries.length; i += 2) {
+                map.put((String) entries[i], entries[i + 1]);
+            }
+            return map;
         }
 
         private MaterialDefinition emptyStat(String name) {
