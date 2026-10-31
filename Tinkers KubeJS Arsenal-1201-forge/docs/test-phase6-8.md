@@ -10,18 +10,27 @@
 | 2 | 物品注册 | 通过 | `kubejs:great_blade`、三种铸模和 `kubejs:war_axe` 均在物品注册表中返回 `true`。 |
 | 3 | 进入世界与网络解码 | 通过 | 客户端以 `quickPlayMultiplayer` 连接本地服务端，服务端完成 Forge 握手，客户端随后重载 `tkja_server_materials`；没有因材料属性或网络包解码断开。 |
 | 4 | 配方加载 | 通过 | 巨刃部件制作、金铸模、沙铸模、红沙铸模、复合浇铸共 11 个目标配方均在服务端配方管理器中返回 `true`。第六至八期已有配方链测试也全部按预期加载。 |
-| 5 | 物品标签 | 通过 | 部件和铸模标签由 `ArsenalPartBuilder.tags` 写入动态数据包；战斧的 `melee/weapon`、`harvest/primary`、`small` 标签由 `ToolDataEventJS` 写入。启动和服务端加载过程中没有标签解析错误。 |
+| 5 | 物品标签 | 通过 | 补测脚本逐项调用 `Item.of(...).hasTag(...)`；巨刃、三种铸模和战斧的目标标签全部打印 `PASS actual=true`。 |
 | 6 | 材料属性 | 通过 | 铁、铜的 `kubejs:blade` 属性均能从 `MaterialRegistry` 读回；三项数值字段可正常解码。 |
-| 7 | 部件制作 | 通过 | 客户端资源包找到巨刃部件贴图和图案贴图；材料贴图生成器完成 435 张部件贴图，包含客户端材料变体。 |
-| 8 | 铸模 | 通过 | 金、沙、红沙铸模物品及对应浇铸/复合配方均已加载，目标配方检查全部为 `true`。 |
-| 9 | 工具组装 | 通过 | 战斧工具定义、三部件布局和工具建造配方加载成功；客户端成功解析 `kubejs:item/tool/war_axe` 模型。 |
-| 10 | 损坏模型 | 通过 | `brokenPart('blade')` 生成损坏模型，客户端加载了 `kubejs:item/tool/war_axe/broken`；匠魂仅报告现有旧式 modifier model 警告。 |
-| 11 | 回收 | 通过 | 战斧加入 `tconstruct:modifiable/multipart`，使用匠魂通用回收配方；未新增重复回收配方。 |
-| 12 | 创造栏 | 通过 | `ArsenalToolTabs` 将战斧材料变体放入匠魂工具栏、巨刃变体放入工具部件栏、铸模放入冶炼栏，并从 KubeJS 栏移除这些物品。代码加载无异常。 |
-| 13 | JEI | 通过 | 客户端正常启动并完成材料、工具和配方资源加载；JEI 未出现因自定义物品或配方解码导致的崩溃。 |
-| 14 | 手册 | 通过 | 战斧生成中文手册页资源，包含“测试用战斧。”和“测试特性一”；客户端资源重载完成。 |
-| 15 | `/reload` | 资源重载路径通过 | 动态数据包由 `ServerScriptManagerMixin` 在服务端资源重载阶段写入，启动日志出现 `Server resource reload complete!`，且材料、工具和配方检查通过。Gradle 的开发服务端 TTY 会回显输入但未执行交互命令，因此没有把命令行手动触发单独计入证据。 |
-| 16 | `extend().statTrait()` | 通过 | 铁、铜的 blade 属性和 `tconstruct:sharpness` 均从注册表读回；读回列表为 `[ModifierEntry{tconstruct:sharpness,level=1}]`。扩展文件没有 `default` 字段，不会清空原材料默认特性。 |
+| 7 | 部件制作 | 通过 | `PartRecipe` 实测 `cost=4`、`pattern=kubejs:great_blade`；铁材料输出为 `kubejs:great_blade`。 |
+| 8 | 铸模 | 通过 | 实测金铸模配方的输入匹配为 `castMatch=true`，流体为 `tconstruct:molten_gold`、数量 `90`，输出为 `great_blade_cast`。 |
+| 9 | 工具组装 | 通过 | 铁/铜/木三材料战斧均成功组装；铁攻击 `6.75`、铜攻击 `5`、差值 `1.75`，攻速 `1.1000000238/1.2000000477`，耐久 `300/200`。`part_stats` 运行时缩放读回为 `1,1,1`。 |
+| 10 | 损坏模型 | 服务端通过，GUI 未测 | `ToolDamageUtil.breakTool` 后 `isBroken=true`。正式客户端/MCP 未准备好，因此没有把损坏模型截图计为通过。 |
+| 11 | 回收 | 通过 | 匠魂通用回收显示配方共 `61` 条，结果中实际出现 `kubejs:great_blade`；显示配方材料占位为 `tconstruct:unknown`，这是通用回收展示层的占位值。 |
+| 12 | 创造栏 | GUI 未测 | 代码注册和标签加载正常；当前没有正式客户端/MCP 会话，未声称创造栏界面通过。 |
+| 13 | JEI | GUI 未测 | 开发客户端曾完成启动资源加载，但没有正式 JEI 页面检索截图，本次按要求标记未测。 |
+| 14 | 手册 | GUI 未测 | 手册资源和中文文本已生成；当前没有正式客户端/MCP 会话，未声称手册界面通过。 |
+| 15 | `/reload` | 通过 | RCON 实测：基线 `attack=6.75`；临时把铁 `customStat` 从 `3` 改为 `5` 后执行 `/reload`，读回 `attack=8.75`；恢复为 `3` 并再次 `/reload` 后回到 `6.75`。RCON 已关闭。 |
+| 16 | `extend().statTrait()` | 通过 | 铁、铜的 blade 属性和 `tconstruct:sharpness` 均从注册表读回；本次补测另实测铁默认与 head 特性均保留 `tconstruct:magnetic`。扩展文件没有 `default` 字段，不会清空原材料默认特性。 |
+
+## 4D/补测证据
+
+本次补测使用 `run/kubejs/server_scripts/tkja_verify_behavior.js`，通过 RCON 执行 `/kubejs custom_command tkja_verify` 和 `/kubejs custom_command tkja_verify_tool`。逐项断言输出统一使用 `[TKJA-VERIFY]` 前缀，完整日志在 `run/logs/latest.log` 与 `run/logs/kubejs/server.log`。
+
+- 5、7、7b、8、9、10、11、16b 均有 `PASS` 输出；9 的三部件缩放为 `1,1,1`，实际铁/铜攻击为 `6.75/5`。
+- 15 的 RCON 证据为 `6.75 → 8.75 → 6.75`，中间只临时修改铁 `customStat`，完成后已恢复脚本。
+- 10B、12B、13B、14B 需要正式客户端/MCP 截图。本环境只有开发客户端，且未准备可用的正式 MCP 客户端实例，因此这些 GUI 项目保持“未测”。
+- RCON 测试客户端为临时文件 `D:\AI临时文件\tkja_rcon.py`；服务端测试结束后已从 `run/server.properties` 恢复备份并关闭 RCON。
 
 ## 任务一实现
 
@@ -33,6 +42,8 @@
 
 - `run/kubejs/startup_scripts/tkja_chain_test.js`
 - `run/kubejs/server_scripts/tkja_chain_test.js`（在原链式配方测试中加入材料、特性、部件和战斧检查）
+- `run/kubejs/server_scripts/tkja_verify_behavior.js`（4D 行为级补测断言）
+- `D:\AI临时文件\tkja_rcon.py`（临时 RCON 测试客户端，不属于仓库）
 - `run/kubejs/assets/kubejs/textures/item/part/great_blade.png`
 - `run/kubejs/assets/kubejs/textures/gui/tinker_pattern/great_blade.png`
 - `run/kubejs/assets/kubejs/textures/item/cast/great_blade.png`
