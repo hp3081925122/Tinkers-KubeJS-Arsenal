@@ -31,7 +31,7 @@
 | D12 | 通过 | mctest 实测镐头提示框：硬度 4、密度 5、韧性 9；部件加成为近战伤害 +2、挖掘速度 -10%、光泽 II。工具手柄只有三围行。截图见 `run/mctest/runs/d12_tooltips-20261031-204423/`。 |
 | D13 | 部分通过 | 成品镐提示框实测耐久 599、加固 II、光泽 II、穿甲 I、攻击伤害 8.56。工匠站预览未测。截图见 `run/mctest/runs/d13_finished_correct-20261031-204506/`。 |
 | D14 | 通过 | 同一世界内执行 `/reload` 后，客户端脚本读回 hardness=`8`，head 为 attack=`8`、miningSpeed=`5`、tier=`IRON`。mctest 运行记录见 `run/mctest/runs/d14_reload-20261031-204528/` 和 `d14_stats-20261031-204556/`。 |
-| D15 | 失败 | hardness=8 重载前已存在的镐，重载后提示框仍为攻击伤害 `8.56`，与 hardness=8 应有的重算值不一致。说明已有工具没有在本次重载后自动重建属性；该问题未在本轮修复。截图见 `run/mctest/runs/d15_existing2-20261031-204652/`。 |
+| D15 | 通过（复测，非代码问题） | 首轮记为失败，是因为只执行了 `/reload` 就截图，漏了交接文档要求的“退出并重新进入世界”。匠魂 `ToolStack.verifyTag`（物品从 NBT 加载时调用）在材料注册表加载完成后会对有材料的工具执行 `rebuildStats()`，`/reload` 本身不改已有物品 NBT；HPTlib 的部件加成注入在 `MaterialStatsModule.addToolStats/addTraits`，属于 `rebuildStats` 流程。复测（新启动客户端，`phase10_gui` 存档，`/data get`）：hardness=4 时镐 A 为 attack `7.5600004`、mining_speed `2.5500002`、tier `stone`；改 hardness=8 并 `/reload` 后、重进前镐 A 不变（对照值）；同条件新造镐 C 为 attack `15.08`、mining_speed `4.25`、tier `iron`；退出重进后镐 A 变为 attack `15.08`、mining_speed `4.25`、tier `iron`，与镐 C 完全一致；词条 reinforced 2、lustrous 2（上限 2）、pierce 1 不变。运行记录：`D:\AI临时文件\tkja-phase10-d15\d15_rejoin-20261031-210957\`，脚本 `d15_rejoin.py`。 |
 
 ## K、S、H 场景
 
@@ -56,5 +56,6 @@ ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使�
 
 - 数据包、断言脚本和服务端日志：`D:\AI临时文件\tkja-phase10-full-server\`；
 - K2/K3 脚本（`tkja_props_errors.js`、`tkja_verify_k3.js`）和日志：`D:\AI临时文件\tkja-phase10-k23\`，测完已从 `run/kubejs/server_scripts/` 移除；
+- D15 复测脚本、运行记录和客户端启动日志：`D:\AI临时文件\tkja-phase10-d15\`；`phase10_gui` 中的测试数据包和 `run/mctest/autojoin.txt` 测完已删除；
 - 客户端测试临时目录：`D:\AI临时文件\tkja-phase10-full-client\`（本轮未形成 GUI 通过截图）；
 - 当前仓库 `run` 中没有保留第十期临时数据包和脚本。
