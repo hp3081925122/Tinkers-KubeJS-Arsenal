@@ -35,6 +35,16 @@ $env:GRADLE_OPTS='-Dnet.minecraftforge.gradle.check.certs=false'
 
 完整命令、错误和清理记录见：[phase10-server-blocked.md](D:/AI临时文件/tkja-phase10-server/phase10-server-blocked.md)。
 
+## 依赖修复后的启动复核
+
+已将 HPTlib 的 Mantle/TConstruct CurseMaven 文件 ID 统一为本模组当前使用的 `8809819`/`8809959`，并用 `-PskipMcp` 跳过仅客户端的 MCP 开发模组后重新启动服务端：
+
+```powershell
+.\gradlew.bat runServer --offline -PskipMcp "-Dnet.minecraftforge.gradle.check.certs=false"
+```
+
+实际日志包含：`Loaded material properties for 0 materials, 0 stat formulas and 0 part formulas`，以及 `Done (4.163s)!`。这证明依赖解析和专用服务端启动已恢复；本次启动未放入第十期测试数据包，因此没有将 D/K 项目改记为通过。
+
 ## 编号结果
 
 由于服务端没有启动，以下项目均为“未测”，没有伪造游戏内通过证据：

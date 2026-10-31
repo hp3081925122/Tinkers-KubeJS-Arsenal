@@ -241,11 +241,11 @@ ArsenalMaterialEvents.data(event => {
 
 ## 7. 待确认问题（开工时先查清）
 
-- **匠魂版本**：HPTlib 依赖的 Tinkers 版本（3.11.2.166）低于本模组（3.12.0.220）。这次的注入点两版一致；是否顺便把 HPTlib 升级到 3.12，需要考虑另外两个附属。
+- **匠魂版本**：HPTlib 已与本模组统一使用 Tinkers 3.12.0.220 和 Mantle 1.11.117，避免 Composite Build 的严格依赖约束冲突。
 - **重载顺序**：`MaterialStatsManager` 与 `MaterialTraitsManager` 在 `AddReloadListenerEvent` 中的先后顺序，决定能否共用 4.1 中的静态快照。
 - **HPTlib 版本管理**：
   - HPTlib 目前不是 git 仓库，开工前建议先 `git init` 并提交现状。
-  - 版本号应升到 1.1.0，本模组的 `hptlib_version_range` 设为 `[1.1.0,)`。
+  - 版本号为 1.1.0，本模组的 `hptlib_version_range` 只声明最低版本 `[0.0.1,)`。
 - **HPTlib 的 `mods.toml`**：其中写了 JEI 可选依赖，与"可选依赖不写入 mods.toml"的规则冲突；是否顺便清理，需确认。
 
 ## 8. 实现记录（2026年10月31日）
@@ -253,7 +253,7 @@ ArsenalMaterialEvents.data(event => {
 - **待确认问题的结论：**
   - 重载顺序：匠魂在 `MaterialRegistry.addDataPackListeners` 中先注册 stats、后注册 traits，并且 Mantle 的 `MergingJsonDataLoader` 是同步执行的 `ResourceManagerReloadListener`，所以两边可以共用同一份快照（按同一个 `ResourceManager` 实例缓存）。
   - HPTlib 已 `git init` 并提交 1.0.0 的现状；版本升到 1.1.0；本模组的 `hptlib_version_range=[1.1.0,)`。
-  - HPTlib 的匠魂依赖仍是 3.11.2.166，未升级；JEI 可选依赖未清理。
+  - HPTlib 的匠魂依赖已升级到 3.12.0.220，Mantle 已升级到 1.11.117；JEI 可选依赖未清理。
 - **HPTlib 新增：**
   - `org.hp.hptlib.material` 包：`HptMaterialProperties`、`MaterialProperties`、`StatFormula`、`FieldFormula`、`LinearFormula`。
   - `org.hp.hptlib.mixin` 包：`MaterialStatsManagerMixin`、`MaterialTraitsManagerMixin`、`MaterialTraitsBuilderAccessor`。
