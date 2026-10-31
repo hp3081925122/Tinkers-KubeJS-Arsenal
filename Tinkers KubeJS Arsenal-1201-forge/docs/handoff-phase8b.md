@@ -74,7 +74,7 @@ ArsenalMaterialEvents.data(event => {
 
 - 开发环境 `Tinkers KubeJS Arsenal-1201-forge/run/`，用户同意直接在本目录测。启动用 `./gradlew runClient`（后台运行，耗时长）。
 - 已知干扰：开发依赖 Advanced Loot Info（`ali:jei_plugin`）在 `/reload` 时会卡 4 分钟以上，这不是本模组的问题。需要时可以临时从 `run/mods` 或依赖里去掉它，测完恢复。
-- 可以用游戏交互 MCP（skill `minecraft-mcp`，jar 在 `E:\模组\我的世界mcp的jar`）。**注意**：这些 jar 是按正式环境编译的，放进 `run/mods` 会在进主界面时崩溃。所以开发环境里主要靠日志、命令和 KubeJS 脚本输出验证，用户也可以手动配合看画面。
+- 可以用游戏交互 MCP（skill `minecraft-mod-testing`）。`build.gradle` 已把它按反混淆依赖加入开发环境，`runClient` 直接可用；**不要**把 MCP jar 放进 `run/mods`（1.20.1 Forge 会崩溃）。
 - `run/options.txt` 里设置 `pauseOnLostFocus:false`。
 - `run/kubejs/server_scripts/tkja_material_test.js` 是早期的材料测试脚本，可以保留。新建的测试脚本统一用 `tkja_` 前缀，测完告诉用户哪些文件是测试用的。
 
