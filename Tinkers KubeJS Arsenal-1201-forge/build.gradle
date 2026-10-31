@@ -125,10 +125,6 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:tinkers-reforged-376876:${project.tinkers_reforged_curseforge_file_id}")
     implementation fg.deobf("curse.maven:jei-238222:8778011")
     implementation fg.deobf("curse.maven:jade-324717:8479276")
-    // 开发环境加入 Advanced Loot Info，查看战利品表和村民交易信息。
-    if (!project.hasProperty('skipAli')) {
-        implementation fg.deobf("curse.maven:advanced-loot-info-1205426:7451552")
-    }
     // 本机存在游戏交互 MCP 时加入开发环境，便于自动化测试；其他机器没有该文件时跳过。
     if (!project.hasProperty('skipMcp') && new File(mcpJarDir, mcpJarName + '.jar').exists()) {
         runtimeOnly fg.deobf("local:${mcpJarName}:0.4.20")

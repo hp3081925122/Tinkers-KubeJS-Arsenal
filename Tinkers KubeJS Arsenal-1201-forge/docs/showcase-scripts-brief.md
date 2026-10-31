@@ -29,7 +29,7 @@
 | 游戏目录（开发环境） | 项目目录下的 `run\`，KubeJS 目录为 `run\kubejs\` |
 | 匠魂 jar 解压副本 | `D:\AI临时文件\tc_jar_8809959\`（贴图、数据、类文件都在这里，可参考和复制） |
 
-用户启动游戏：在项目目录执行 `gradlew runClient -PskipAli`。`-PskipAli` 用来去掉开发依赖 Advanced Loot Info，它会让 JEI 在加载时卡住好几分钟。
+用户启动游戏：在项目目录执行 `gradlew runClient`。开发环境已移除 Advanced Loot Info，避免它的 JEI 插件阻塞资源重载。
 
 ---
 
