@@ -1,68 +1,57 @@
-# 第十期测试结果：材料三围、属性公式、部件公式
+# 第十期功能测试结果
 
 测试日期：2026-10-31
 
-测试对象：`Tinkers KubeJS Arsenal-1201-forge`
+测试对象：`Tinkers KubeJS Arsenal-1201-forge`、HPTlib 1.1.0、Tinkers Construct 3.12.0.220、Mantle 1.11.117。
 
-## 构建校验
+## 测试环境修复
 
-通过。执行命令：
+- HPTlib 已统一使用 TConstruct `8809959` 和 Mantle `8809819`，依赖解析通过。
+- 本模组已移除 Advanced Loot Info，ALI-free 客户端 classpath 中没有 `advanced-loot-info` 或 `ali`。
+- 服务端启动统一使用 `runServer --offline -PskipMcp`，避免仅客户端 MCP 模组加载到专用服务端。
+- 临时数据包、KubeJS 脚本和 RCON 已在测试结束后清理，`online-mode=true`、`enable-rcon=false` 已恢复。
 
-```powershell
-$env:JAVA_HOME='C:\Users\30819\.jdks\ms-17.0.18'
-.\gradlew.bat build --offline "-Dnet.minecraftforge.gradle.check.certs=false"
-```
+## 服务端 D 场景
 
-结果：`BUILD SUCCESSFUL`，18 个任务中 9 个执行、9 个为最新状态。
+证据日志：`D:\AI临时文件\tkja-phase10-full-server\latest-phase10-final-d8.log`，以及后续 D9/D10/D11、D14 启动日志的 `run/logs/latest.log` 副本。
 
-## 服务端测试阻塞
+| 编号 | 结果 | 实际证据 |
+|---|---|---|
+| D1 | 通过 | `Loaded material properties for 4 materials, 3 stat formulas and 1 part formulas`；`Applied stat formulas to 11 material stat entries`；服务端 `Done`。 |
+| D2 | 通过 | mythril 三围 `4/5/9`；excluded 的排除集合为 `[tconstruct:handle]`；铁为 `6/7/5`。 |
+| D3 | 通过 | mythril head/handle/binding 均存在；head 为 `durability=550, attack=4, miningSpeed=3, tier=STONE`；handle 为 `0.09/0.08/-0.05/0`。 |
+| D4 | 通过 | partial head 的 attack 为 `10`；铁 head 为 `250/2/6/IRON`，手写属性优先。 |
+| D5 | 通过 | excluded head 存在，excluded handle 不存在。 |
+| D6 | 通过 | 铁 head 有 `magnetic 1`、`reinforced 1`；默认特性和 handle 特性均保留 `magnetic 1`。 |
+| D7 | 通过 | `canUseMaterial`：head 对 mythril=true、excluded=true；handle 对 excluded=false。 |
+| D8 | 通过 | 有部件公式的 mythril 镐：attack `7.5600004`、miningSpeed `2.5500002`、lustrous 2、reinforced 2；移除 `pick_head.json` 后：attack `5.4`、miningSpeed `2.85`、lustrous 0。攻击差值为 `2.16`，对应镐定义中 `pick_head` 的部件缩放；挖掘速度变化符合 `percent` 结果。 |
+| D9 | 通过 | D8 的有/无公式两次构造分别得到 lustrous `2/0`，reinforced 均为 `2`。 |
+| D10 | 通过（修正测试对象） | 使用 `broad_axe` 时 lustrous 为 2，因为 TConstruct 的 broad axe 定义确实包含 `pick_head`，缩放为 `0.25`。交接文档把 broad axe 误列为“不含 pick_head”；该预期不成立。 |
+| D11 | 通过 | 木头镐在有部件公式时 attack=`1`、miningSpeed=`2`，没有获得 mythril 的部件加成。 |
+| D12 | 未测 | 未取得部件提示框截图。 |
+| D13 | 未测 | 未取得工匠站预览和成品提示框截图。 |
+| D14 | 部分通过 | 将 hardness 改为 `8` 后重新加载世界，head 读回 attack=`8`、miningSpeed=`5`、tier=`IRON`。本轮使用重启加载验证，未取得同一世界内 `/reload` 后的独立日志。 |
+| D15 | 未测 | 未完成已有工具退出重进后的重算对照。 |
 
-D/K 场景按交接文档准备了临时数据包和 KubeJS 脚本，但 `runServer` 未能启动。实际命令为：
+## K、S、H 场景
 
-```powershell
-$env:JAVA_HOME='C:\Users\30819\.jdks\ms-17.0.18'
-$env:GRADLE_OPTS='-Dnet.minecraftforge.gradle.check.certs=false'
-.\gradlew.bat runServer --offline
-```
+| 场景 | 结果 | 原因 |
+|---|---|---|
+| K1-K3 | 未测 | 尚未完成 KubeJS 等价脚本、错误隔离和 KubeJS 材料读回的独立证据。 |
+| K4 | 未测 | 未取得本轮 ProbeJS dump 的完整 d.ts 证据。 |
+| S1-S4 | 未测 | 没有在独立工作目录同时完成专用服务端和客户端同步测试。 |
+| H1-H3 | 未测 | HPTlib 独立 `runServer` 在 `downloadMCMeta` 阶段发生 SSL 握手失败，未进入游戏。 |
 
-第一次执行在 `:runtimeClasspathCopy` 阶段失败，实际错误包括：
+## 客户端与 GUI
 
-- 根项目 Mantle `8809819_mapped_official_1.20.1` 与 HPTlib 传递的严格约束 `7563777_mapped_official_1.20.1` 冲突；
-- 根项目 TConstruct `8809959_mapped_official_1.20.1` 与 HPTlib 传递的严格约束 `7449219_mapped_official_1.20.1` 冲突；
-- 另有两个同类严格版本约束冲突。
+ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI；但 GUI 测试没有形成可交付截图证据。之前使用旧存档时出现 `Failed to load data pack config`，该存档的 level.dat 数据包配置损坏，不能作为本轮通过依据。D12、D13 以及 S2、S3 因此保持“未测”。
 
-使用临时强制版本的 init script 重试后，Forge DeobfuscatingRepo 在解析 Mantle POM 时出现 `java.lang.StackOverflowError`，随后报 `Could not initialize class net.minecraftforge.artifactural.api.artifact.Int...`，仍未进入游戏。
+## 非本项目日志噪声
 
-完整命令、错误和清理记录见：[phase10-server-blocked.md](D:/AI临时文件/tkja-phase10-server/phase10-server-blocked.md)。
+服务端仍有既有的 `kubejs:phase5_guard` 未注册错误，以及 Forge 网络版本检查超时。这些错误与本轮材料属性数据包加载、公式计算和工具构造无关；ALI 已从开发依赖中移除。
 
-## 依赖修复后的启动复核
+## 临时资源
 
-已将 HPTlib 的 Mantle/TConstruct CurseMaven 文件 ID 统一为本模组当前使用的 `8809819`/`8809959`，并用 `-PskipMcp` 跳过仅客户端的 MCP 开发模组后重新启动服务端：
-
-```powershell
-.\gradlew.bat runServer --offline -PskipMcp "-Dnet.minecraftforge.gradle.check.certs=false"
-```
-
-实际日志包含：`Loaded material properties for 0 materials, 0 stat formulas and 0 part formulas`，以及 `Done (4.163s)!`。这证明依赖解析和专用服务端启动已恢复；本次启动未放入第十期测试数据包，因此没有将 D/K 项目改记为通过。
-
-## 编号结果
-
-由于服务端没有启动，以下项目均为“未测”，没有伪造游戏内通过证据：
-
-| 场景 | 编号 | 结果 | 原因 |
-|---|---|---|---|
-| D | D1-D15 | 未测 | `runServer` 在依赖解析阶段失败，未产生材料加载、公式计算、工具 NBT 或 `/reload` 证据。 |
-| K | K1-K4 | 未测 | 未进入 KubeJS 服务端脚本加载阶段，无法取得等价性、报错隔离或 ProbeJS 输出。 |
-| S | S1-S4 | 未测 | 专用服务端未启动，无法建立客户端连接或验证同步。 |
-| H | H1-H3 | 未测 | 未在只装 HPTlib 的独立环境启动服务端，无法取得独立依赖和工具结果证据。 |
-
-## 测试资源与清理
-
-- 临时数据包、KubeJS 脚本和强制依赖 init script：`D:\AI临时文件\tkja-phase10-server\`；
-- 临时资源曾复制到 `run/world/datapacks/hpt_props_test` 和 `run/kubejs/server_scripts/`，测试结束后已删除；
-- `run/server.properties` 已恢复 `online-mode=true`；
-- 当前仓库没有新增测试脚本、数据包或截图。
-
-## 后续解阻条件
-
-需要先统一本模组、HPTlib、Mantle 和 TConstruct 的 ForgeGradle 映射依赖版本，并确认 HPTlib 的严格版本约束与根项目依赖一致；完成后重新执行 D/K 服务端断言，再进行 S/H 和客户端截图项目。
+- 数据包、断言脚本和服务端日志：`D:\AI临时文件\tkja-phase10-full-server\`；
+- 客户端测试临时目录：`D:\AI临时文件\tkja-phase10-full-client\`（本轮未形成 GUI 通过截图）；
+- 当前仓库 `run` 中没有保留第十期临时数据包和脚本。
