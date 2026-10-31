@@ -40,13 +40,16 @@
 | K1 | 通过 | KubeJS-only 专用服务端加载 3 materials、3 stat formulas、1 part formula，应用 8 条 stat entries；mythril_k 为 4/5/9，excluded_k 排除 handle，head 存在、handle 被排除，head 为 550/4/3/STONE。证据：`D:\AI临时文件\tkja-phase10-remaining-server\k-only.log`。 |
 | K2 | 失败（已修复，`af6e2f6`） | 首测：`tkja_props_errors.js` 第一个用例（limb 的 `bogus`）抛错后，KubeJS 把异常当作 `exit(ERROR)`，同一次 `ArsenalMaterialEvents.data` 的后续 handler（含正常的 `tkja_props_test.js`）全部未执行，HPTlib 只加载 `0 materials, 0 stat formulas and 0 part formulas`。原因：KubeJS 2001.6.5 `EventHandlerContainer.handle` 仅在传入 `EventExceptionHandler` 且返回 `null` 时继续后续 handler，本模组 `ServerScriptManagerMixin` 调 `DATA.post(data)` 未传。修复后三个数据事件（材料、词条、工具）都传入继续执行的异常处理器。复测 5 条报错依次为：`unknown round mode 'bogus'`、`'accuracy' coefficient 'hardness' must be a number`、`tconstruct:harvest_tier is not a numeric Tinkers tool stat`、`Part formula tconstruct:tool_binding: Trait tconstruct:reinforced max level must be at least 1`、`Material kubejs:bad_props: Material property 'hardness' must be a number`。证据：`D:\AI临时文件\tkja-phase10-k23\latest-k23.log`（修复前）、`latest-k23-fixed.log`（修复后）。 |
 | K3 | 通过（修复后） | 日志有 `Stat formula tconstruct:limb was not generated` 和 `Stat formula tconstruct:grip was not generated`，以及 bad_props、tool_handle、tool_binding 的未生成提示；断言 `K3 PASS limb=false grip=false head=true handle=true`；公式集合为 `[binding, handle, head]`，部件公式只有 `pick_head`；HPTlib 加载 `3 materials, 3 stat formulas and 1 part formulas`，应用 8 条，与 K1 一致。 |
-| K4 | 未测 | 未取得本轮 ProbeJS dump 的完整 d.ts 证据。 |
-| S1-S4 | 未测 | 没有在独立工作目录同时完成专用服务端和客户端同步测试。 |
+| K4 | 未测 | 客户端执行 `/probejs dump` 后，进度停在 `Started downloading and merging docs...`（需联网下载文档），一直没有生成新的 d.ts；按用户要求跳过。 |
+| S1 | 通过 | 专用服务端临时改用 `run-server` 工作目录（测完已还原 `build.gradle` 并删除目录），服务端加载 `4 materials, 3 stat formulas and 1 part formulas`，应用 11 条。客户端连接 `localhost` 后日志：`Received synced material properties for 4 materials and 1 part formulas`，`hasSingleplayerServer()=false`。 |
+| S2 | 通过 | 客户端读提示框文字：镐头为“部件加成：/近战伤害：+2/挖掘速度：-10%/光泽 II”，工具手柄没有部件加成，两者都不显示三围，与 D12 一致。 |
+| S3 | 通过 | 同一把 mythril 镐：客户端 NBT attack `7.5600004`，服务端 `/data get` attack `7.5600004`，与 D8 镐 A 相同；客户端提示框“8.56 攻击伤害”（含玩家基础攻击 1）。 |
+| S4 | 通过 | 服务端把 mythril hardness 改成 8 并执行 `reload`：客户端日志再次出现 `Received synced material properties for 4 materials and 1 part formulas`，客户端读到的 hardness 由 4 变为 8；镐头提示框的部件加成近战伤害由 +2 变为 +4（交接文档写“三围更新”，但第十期已改为部件提示框不显示三围，所以改看部件加成）。重载后新造的镐，客户端 NBT 和服务端 `/data get` 都为 attack `15.08`、mining_speed `4.25`、tier `iron`，与 D15 镐 C 相同。 |
 | H1-H3 | 未测 | HPTlib 独立 `runServer` 在 `downloadMCMeta` 阶段发生 SSL 握手失败，未进入游戏。 |
 
 ## 客户端与 GUI
 
-ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使用全新 `phase10_gui` 世界后，D12 和成品提示框测试取得 mctest 截图；之前旧存档的 `Failed to load data pack config` 不再作为本轮依据。工匠站预览和专用服务器同步仍未完成。
+ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使用全新 `phase10_gui` 世界后，D12 和成品提示框测试取得 mctest 截图；之前旧存档的 `Failed to load data pack config` 不再作为本轮依据。工匠站预览仍未完成；专用服务器同步见 S1-S4。
 
 ## 非本项目日志噪声
 
@@ -57,5 +60,6 @@ ALI 移除后的客户端可以启动，且 classpath 中确认没有 ALI。使�
 - 数据包、断言脚本和服务端日志：`D:\AI临时文件\tkja-phase10-full-server\`；
 - K2/K3 脚本（`tkja_props_errors.js`、`tkja_verify_k3.js`）和日志：`D:\AI临时文件\tkja-phase10-k23\`，测完已从 `run/kubejs/server_scripts/` 移除；
 - D15 复测脚本、运行记录和客户端启动日志：`D:\AI临时文件\tkja-phase10-d15\`；`phase10_gui` 中的测试数据包和 `run/mctest/autojoin.txt` 测完已删除；
+- S 场景脚本、服务端和客户端日志、mctest 运行记录：`D:\AI临时文件\tkja-phase10-s\`；
 - 客户端测试临时目录：`D:\AI临时文件\tkja-phase10-full-client\`（本轮未形成 GUI 通过截图）；
 - 当前仓库 `run` 中没有保留第十期临时数据包和脚本。
