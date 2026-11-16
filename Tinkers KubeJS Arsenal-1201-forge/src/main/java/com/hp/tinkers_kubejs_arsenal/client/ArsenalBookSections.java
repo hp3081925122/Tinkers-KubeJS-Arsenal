@@ -16,11 +16,12 @@ import slimeknights.mantle.client.book.data.SectionData;
 import slimeknights.mantle.client.book.repository.BookRepository;
 import slimeknights.tconstruct.common.TinkerTags;
 import slimeknights.tconstruct.library.client.book.TinkerBook;
-import slimeknights.tconstruct.library.client.book.content.material.SingleMaterialStatContent;
+import slimeknights.tconstruct.library.client.book.content.AbstractMaterialContent;
 import slimeknights.tconstruct.library.client.book.sectiontransformer.materials.TierRangeMaterialSectionTransformer;
 import slimeknights.tconstruct.library.materials.IMaterialRegistry;
 import slimeknights.tconstruct.library.materials.MaterialRegistry;
 import slimeknights.tconstruct.library.materials.definition.IMaterial;
+import slimeknights.tconstruct.library.materials.definition.MaterialId;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 import slimeknights.tconstruct.library.materials.stats.MaterialStatsId;
 
@@ -161,7 +162,7 @@ public final class ArsenalBookSections {
         }
     }
 
-    private static class Page extends SingleMaterialStatContent {
+    private static class Page extends AbstractMaterialContent {
         private final transient MaterialStatsId stat;
 
         private Page(MaterialVariantId variant, boolean detailed, MaterialStatsId stat) {
@@ -175,18 +176,25 @@ public final class ArsenalBookSections {
         }
 
         @Override
-        protected MaterialStatsId getStatType() {
-            return this.stat;
+        protected MaterialStatsId getStatType(int index) {
+            return index == 0 ? this.stat : null;
         }
 
         @Override
-        protected boolean hasPart() {
-            return ArsenalPartBuilder.PARTS.values().stream().anyMatch(part -> this.stat.equals(part.getStatType()));
+        protected int getStatRows() {
+            return 1;
         }
 
         @Override
-        protected String translationSuffix() {
-            return this.stat.getPath().replace('/', '_');
+        protected boolean supportsStatType(MaterialStatsId stat) {
+            return stat.equals(this.stat);
+        }
+
+        @Override
+        protected String getTextKey(MaterialId material) {
+            String base = "material." + material.getNamespace() + "." + material.getPath() + (this.detailed ? ".encyclopedia" : ".flavor");
+            String specific = base + "." + this.stat.getPath().replace('/', '_');
+            return I18n.exists(specific) ? specific : base;
         }
     }
 }
