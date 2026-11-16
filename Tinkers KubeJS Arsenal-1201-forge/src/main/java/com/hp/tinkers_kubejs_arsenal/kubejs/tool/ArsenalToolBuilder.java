@@ -208,7 +208,7 @@ public class ArsenalToolBuilder extends ItemBuilder {
                     default -> throw this.fail("Unknown armor slot '" + this.armorSlot + "'");
                 };
                 SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(this.equipSound);
-                yield new MultilayerArmorItem(new DummyArmorMaterial(this.armorSet, sound == null ? SoundEvents.ARMOR_EQUIP_IRON : sound), type, this.createItemProperties(), definition, this.armorSet);
+                yield new MultilayerArmorItem(new DummyArmorMaterial(this.armorSet, sound == null ? SoundEvents.ARMOR_EQUIP_IRON : sound), type, this.createItemProperties(), definition);
             }
             default -> new ModifiableItem(this.createItemProperties(), definition);
         };

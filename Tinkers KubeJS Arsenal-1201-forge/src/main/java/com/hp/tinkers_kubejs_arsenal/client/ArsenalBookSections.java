@@ -45,7 +45,7 @@ public final class ArsenalBookSections {
         }
         event.enqueueWork(() -> {
             for (MaterialStatsId stat : StatTypeEventJS.TYPES.keySet()) {
-                TierRangeMaterialSectionTransformer.registerMaterialType(stat, (variant, detailed) -> new Page(variant, detailed, stat));
+                TierRangeMaterialSectionTransformer.registerMaterialType(stat, (variant, detailed) -> new Page(variant, detailed, stat), stat);
             }
             add(TinkerBook.MATERIALS_AND_YOU, 0, 1, true, false);
             add(TinkerBook.PUNY_SMELTING, 2, 2, true, false);

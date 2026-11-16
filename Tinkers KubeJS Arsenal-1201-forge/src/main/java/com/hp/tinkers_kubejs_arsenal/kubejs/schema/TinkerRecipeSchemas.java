@@ -24,6 +24,7 @@ import slimeknights.mantle.recipe.helper.FluidOutput;
 import slimeknights.mantle.recipe.helper.ItemOutput;
 import slimeknights.mantle.recipe.ingredient.FluidIngredient;
 import slimeknights.tconstruct.library.json.predicate.material.MaterialPredicate;
+import slimeknights.tconstruct.library.materials.definition.IMaterial;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 import slimeknights.tconstruct.library.materials.definition.MaterialId;
 import slimeknights.tconstruct.library.recipe.alloying.AlloyRecipe;
@@ -342,7 +343,7 @@ public final class TinkerRecipeSchemas {
 
     private static RecipeSchema itemPartBuilder() {
         return schema(TinkerComponents.PATTERN.key("pattern"), TinkerComponents.ITEM_OUTPUT_REQUIRED_STACK.key("result"),
-            TinkerComponents.MATERIAL_VARIANT.key("material").optional(MaterialId.UNKNOWN), TinkerComponents.INGREDIENT_REQUIRED.key("pattern_item").optional(defaultPatternItem()),
+            TinkerComponents.MATERIAL_VARIANT.key("material").optional(IMaterial.UNKNOWN_ID), TinkerComponents.INGREDIENT_REQUIRED.key("pattern_item").optional(defaultPatternItem()),
             TinkerComponents.NON_NEGATIVE_INT.key("cost").optional(0));
     }
 

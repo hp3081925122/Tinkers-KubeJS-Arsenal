@@ -98,7 +98,6 @@ public record ScriptMaterialStats(MaterialStatType<ScriptMaterialStats> type, Li
         return this.getLocalizedInfo(1);
     }
 
-    @Override
     public List<Component> getLocalizedInfo(float scale) {
         List<Component> info = new ArrayList<>();
         for (int i = 0; i < this.entries.size(); i++) {

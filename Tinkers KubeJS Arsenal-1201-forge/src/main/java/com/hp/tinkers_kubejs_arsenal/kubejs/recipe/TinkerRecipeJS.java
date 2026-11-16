@@ -13,7 +13,7 @@ import net.minecraft.world.level.material.Fluid;
 import slimeknights.mantle.recipe.ingredient.FluidIngredient;
 import slimeknights.tconstruct.library.recipe.casting.ICastingRecipe;
 import slimeknights.tconstruct.library.recipe.melting.IMeltingRecipe;
-import slimeknights.tconstruct.library.materials.definition.MaterialId;
+import slimeknights.tconstruct.library.materials.definition.IMaterial;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 
 public class TinkerRecipeJS extends RecipeJS {
@@ -47,7 +47,7 @@ public class TinkerRecipeJS extends RecipeJS {
             case "item_part_builder" -> {
                 MaterialVariantId material = this.value("material");
                 Integer cost = this.value("cost");
-                if (material != null && !MaterialId.UNKNOWN.equals(material) && (cost == null || cost <= 0)) {
+                if (material != null && !IMaterial.UNKNOWN_ID.equals(material) && (cost == null || cost <= 0)) {
                     throw new RecipeExceptionJS("Item part builder " + this.id + " requires a positive cost when material is defined");
                 }
             }
