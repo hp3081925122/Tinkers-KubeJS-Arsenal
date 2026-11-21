@@ -220,7 +220,8 @@ public final class TinkerComponents {
     static JsonElement toJson(Object value) {
         Object unwrapped = Wrapper.unwrapped(value);
         if (unwrapped instanceof JsonElement element) {
-            return element;
+            // 复制原始 JSON，避免 Mantle Loadable 反序列化时原地修改 KubeJS 配方 JSON
+            return element.deepCopy();
         }
         JsonElement json = JsonIO.of(unwrapped);
         if (json == null) {

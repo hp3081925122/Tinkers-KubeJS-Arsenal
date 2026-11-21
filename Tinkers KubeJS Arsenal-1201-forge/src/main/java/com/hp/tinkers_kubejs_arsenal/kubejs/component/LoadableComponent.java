@@ -81,7 +81,8 @@ public final class LoadableComponent<T> implements RecipeComponent<T> {
         if (this.valueClass.isInstance(unwrapped)) {
             return (T) unwrapped;
         }
-        JsonElement json = unwrapped instanceof JsonElement element ? element : JsonIO.of(unwrapped);
+        // 复制原始 JSON，避免 Mantle Loadable（如 mantle:inverted）反序列化时原地修改 KubeJS 配方 JSON
+        JsonElement json = unwrapped instanceof JsonElement element ? element.deepCopy() : JsonIO.of(unwrapped);
         if (json == null) {
             throw new IllegalArgumentException("Expected JSON value for " + this.type);
         }
